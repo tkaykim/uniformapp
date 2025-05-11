@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>유니폼 주문/발주 시스템</title>
+  <style>
+    .tab { margin: 10px 0; }
+    .tab button { margin-right: 5px; }
+    .hidden { display: none; }
+    table, th, td { border: 1px solid #aaa; border-collapse: collapse; padding: 4px; }
+  </style>
+</head>
+<body>
+  <h1>유니폼 주문/발주 시스템</h1>
+  <div class="tab">
+    <button onclick="showTab('order')">주문 등록</button>
+    <button onclick="showTab('orderList')">주문 조회</button>
+    <button onclick="showTab('purchaseList')">발주 조회</button>
+    <button onclick="showTab('designList')">디자인 등록</button>
+    <button onclick="showTab('printList')">인쇄 관리</button>
+  </div>
+
+  <!-- 주문 등록 폼 -->
+  <div id="order" class="tab-content">
+    <form id="orderForm">
+      <input name="groupName" placeholder="단체명"><br>
+      <input name="representativeName" placeholder="대표자명"><br>
+      <input name="representativePhone" placeholder="연락처"><br>
+      <input name="managerName" placeholder="담당자"><br>
+      <select name="mainCategory" id="mainCategorySelect" required><option value="">대분류 선택</option></select><br>
+      <select name="subCategory" id="subCategorySelect" required><option value="">소분류 선택</option></select><br>
+      <select name="brandName" id="brandNameSelect" required><option value="">브랜드 선택</option></select><br>
+      <select name="itemName" id="itemNameSelect" required><option value="">제품명 선택</option></select><br>
+      <input name="productSearch" id="productSearchInput" placeholder="제품명/제품코드 검색(2글자 이상)" autocomplete="off"><div id="productSearchList" style="position:relative;z-index:10;"></div>
+      <input name="brandName_hidden" id="brandNameHidden" type="hidden">
+      <input name="itemCode" id="itemCodeInput" placeholder="제품코드" readonly><br>
+      <select name="color" id="colorSelect" required><option value="">색상 선택</option></select><br>
+      <input name="totalPrice" placeholder="총금액"><br>
+      <input name="size_110" placeholder="size_110 수량"><br>
+      <input name="size_120" placeholder="size_120 수량"><br>
+      <input name="size_130" placeholder="size_130 수량"><br>
+      <input name="size_140" placeholder="size_140 수량"><br>
+      <input name="size_150" placeholder="size_150 수량"><br>
+      <input name="size_160" placeholder="size_160 수량"><br>
+      <input name="size_XS" placeholder="size_XS 수량"><br>
+      <input name="size_S" placeholder="size_S 수량"><br>
+      <input name="size_M" placeholder="size_M 수량"><br>
+      <input name="size_L" placeholder="size_L 수량"><br>
+      <input name="size_XL" placeholder="size_XL 수량"><br>
+      <input name="size_2XL" placeholder="size_2XL 수량"><br>
+      <input name="size_3XL" placeholder="size_3XL 수량"><br>
+      <input name="size_4XL" placeholder="size_4XL 수량"><br>
+      <input name="size_5XL" placeholder="size_5XL 수량"><br>
+      <input name="size_LL" placeholder="size_LL 수량"><br>
+      <input name="size_3L" placeholder="size_3L 수량"><br>
+      <input name="size_4L" placeholder="size_4L 수량"><br>
+      <input name="size_5L" placeholder="size_5L 수량"><br>
+      <input name="size_free" placeholder="size_free 수량"><br>
+      <input name="size_custom" placeholder="size_custom 수량"><br>
+      <button type="button" onclick="submitOrder()">등록</button>
+    </form>
+  </div>
+
+  <!-- 주문 조회 -->
+  <div id="orderList" class="tab-content hidden">
+    <h2>주문 조회</h2>
+    <table id="orderTable">
+      <thead>
+        <tr>
+          <th>주문번호</th>
+          <th>단체명</th>
+          <th>품명</th>
+          <th>전체수량</th>
+          <th>총매출</th>
+          <th>발주상태</th>
+          <th>수정</th>
+          <th>삭제</th>
+          <th>상세보기</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 발주 조회 -->
+  <div id="purchaseList" class="tab-content hidden">
+    <h2>발주 조회</h2>
+    <table id="purchaseTable">
+      <thead>
+        <tr>
+          <th>주문번호</th>
+          <th>단체명</th>
+          <th>담당자</th>
+          <th>발주번호</th>
+          <th>색상</th>
+          <th>총발주수량</th>
+          <th>발주상태</th>
+          <th>수정</th>
+          <th>삭제</th>
+          <th>상세보기</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- 디자인 탭 -->
+  <div id="designList" class="tab-content hidden">
+    <h2>디자인 등록</h2>
+    <form id="designForm">
+      <select name="orderId" id="designOrderSelect">
+        <option value="">주문번호 선택 (선택사항)</option>
+      </select>
+      <input name="title" placeholder="디자인 제목" required>
+      <input name="description" placeholder="설명">
+      <input name="driveLink" placeholder="구글드라이브 링크">
+      <select name="status">
+        <option value="">상태(기본: 착수전)</option>
+        <option value="착수전">착수전</option>
+        <option value="요청됨">요청됨</option>
+        <option value="진행중">진행중</option>
+        <option value="수정요청">수정요청</option>
+        <option value="작업완료">작업완료</option>
+        <option value="확정">확정</option>
+      </select>
+      <input name="createdBy" placeholder="작성자">
+      <button type="button" onclick="submitDesign()">등록</button>
+    </form>
+    <h2>디자인 목록</h2>
+    <table id="designTable">
+      <thead>
+        <tr>
+          <th>디자인번호</th>
+          <th>주문번호</th>
+          <th>제목</th>
+          <th>설명</th>
+          <th>링크</th>
+          <th>상태</th>
+          <th>작성자</th>
+          <th>생성일</th>
+          <th>저장</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="printList" class="tab-content hidden">
+    <h2>인쇄 등록</h2>
+    <form id="printForm">
+      <select name="orderId" id="printOrderSelect">
+        <option value="">주문번호 선택 (선택사항)</option>
+      </select>
+      <input name="printMethod" placeholder="인쇄방식" required>
+      <input name="factoryName" placeholder="인쇄소명" required>
+      <input name="factoryContact" placeholder="인쇄소 연락처">
+      <input name="deliveryAddress" placeholder="납품주소">
+      <input name="expectedDate" type="date" placeholder="납기일">
+      <select name="status">
+        <option value="발주전">발주전</option>
+        <option value="발주요청">발주요청</option>
+        <option value="발주완료">발주완료</option>
+        <option value="작업완료">작업완료</option>
+      </select>
+      <input name="memo" placeholder="메모">
+      <button type="button" onclick="submitPrint()">등록</button>
+    </form>
+    <h2>인쇄 현황</h2>
+    <table id="printTable">
+      <thead>
+        <tr>
+          <th>인쇄번호</th>
+          <th>주문번호</th>
+          <th>인쇄방식</th>
+          <th>인쇄소명</th>
+          <th>납기일</th>
+          <th>상태</th>
+          <th>저장</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // 탭 전환
+    function showTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tab).classList.remove('hidden');
+      if(tab === 'orderList') loadOrders();
+      if(tab === 'purchaseList') loadPurchases();
+      if(tab === 'designList') loadDesigns();
+      if(tab === 'printList') loadPrints();
+    }
+
+    // 주문 등록
+    async function submitOrder() {
+      const form = document.querySelector('#orderForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      // itemName 값이 비어있으면 드롭다운에서 강제로 할당
+      if (!data.itemName) {
+        const itemNameSelect = document.getElementById('itemNameSelect');
+        data.itemName = itemNameSelect.value;
+      }
+      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
+      const res = await fetch('/api/orders', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('등록 완료: ' + JSON.stringify(json));
+      form.reset();
+    }
+
+    // 주문 조회
+    async function loadOrders() {
+      const res = await fetch('/api/orders');
+      const orders = await res.json();
+      // 발주 리스트도 불러오기
+      const pres = await fetch('/api/purchases');
+      const purchases = await pres.json();
+      const tbody = document.querySelector('#orderTable tbody');
+      tbody.innerHTML = '';
+      orders.forEach((o, idx) => {
+        // 주문에 해당하는 발주 찾기
+        const purchase = purchases.find(p => p.orderId === o.orderId);
+        const purchaseStatus = purchase ? purchase.purchaseStatus : '없음';
+        tbody.innerHTML += `
+          <tr>
+            <td>${o.orderId}</td>
+            <td><input value="${o.groupName}" onchange="editOrder('${o.orderId}', 'groupName', this.value)"></td>
+            <td><input value="${o.itemName}" onchange="editOrder('${o.orderId}', 'itemName', this.value)"></td>
+            <td>${o.totalQuantity}</td>
+            <td><input value="${o.totalPrice}" onchange="editOrder('${o.orderId}', 'totalPrice', this.value)"></td>
+            <td>${purchaseStatus}</td>
+            <td><button onclick="saveOrder('${o.orderId}')">저장</button></td>
+            <td><button onclick="deleteOrder('${o.orderId}')">삭제</button></td>
+            <td><button onclick="toggleOrderDetail(${idx})">상세보기</button></td>
+          </tr>
+          <tr class="order-detail-row" id="order-detail-${idx}" style="display:none;">
+            <td colspan="9">
+              <div>
+                <b>주문번호:</b> ${o.orderId} <b>대표자명:</b> ${o.representativeName} <b>연락처:</b> ${o.representativePhone}<br>
+                <b>품명:</b> ${o.itemName} <b>색상:</b> ${o.color}<br>
+                <b>사이즈별 수량:</b> 110: ${o.size_110} / 120: ${o.size_120} / 130: ${o.size_130} / 140: ${o.size_140} / 150: ${o.size_150} / 160: ${o.size_160} / XS: ${o.size_XS} / S: ${o.size_S} / M: ${o.size_M} / L: ${o.size_L} / XL: ${o.size_XL} / 2XL: ${o.size_2XL} / 3XL: ${o.size_3XL} / 4XL: ${o.size_4XL} / 5XL: ${o.size_5XL} / LL: ${o.size_LL} / 3L: ${o.size_3L} / 4L: ${o.size_4L} / 5L: ${o.size_5L} / free: ${o.size_free} / custom: ${o.size_custom}<br>
+                <b>총수량:</b> ${o.totalQuantity} <b>금액:</b> ${o.totalPrice}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function toggleOrderDetail(idx) {
+      const row = document.getElementById('order-detail-' + idx);
+      row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+
+    async function deleteOrder(orderId) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/orders/' + orderId, { method: 'DELETE' });
+        loadOrders();
+      }
+    }
+
+    // 수정/저장용 임시 객체
+    const orderEdits = {};
+    function editOrder(orderId, field, value) {
+      if(!orderEdits[orderId]) orderEdits[orderId] = {};
+      orderEdits[orderId][field] = value;
+    }
+    async function saveOrder(orderId) {
+      await fetch('/api/orders/' + orderId, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(orderEdits[orderId])
+      });
+      alert('저장 완료');
+      loadOrders();
+    }
+
+    const purchaseEdits = {};
+    function editPurchase(purchaseNumber, field, value) {
+      if(!purchaseEdits[purchaseNumber]) purchaseEdits[purchaseNumber] = {};
+      purchaseEdits[purchaseNumber][field] = value;
+    }
+    async function savePurchase(purchaseNumber) {
+      await fetch('/api/purchases/' + purchaseNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(purchaseEdits[purchaseNumber])
+      });
+      alert('저장 완료');
+      loadPurchases();
+    }
+
+    // 발주 조회
+    async function loadPurchases() {
+      const res = await fetch('/api/purchases');
+      const list = await res.json();
+      const tbody = document.querySelector('#purchaseTable tbody');
+      tbody.innerHTML = '';
+      list.forEach((p, idx) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.orderId}</td>
+            <td>${p.groupName || ''}</td>
+            <td><input value="${p.managerName || ''}" onchange="editPurchase('${p.purchaseNumber}', 'managerName', this.value)"></td>
+            <td>${p.purchaseNumber}</td>
+            <td><input value="${p.color || ''}" onchange="editPurchase('${p.purchaseNumber}', 'color', this.value)"></td>
+            <td>${p.totalQuantity}</td>
+            <td>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주전')">발주전</button>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주신청')">발주신청</button>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주완료')">발주완료</button>
+              (${p.purchaseStatus})
+            </td>
+            <td><button onclick="savePurchase('${p.purchaseNumber}')">저장</button></td>
+            <td><button onclick="deletePurchase('${p.purchaseNumber}')">삭제</button></td>
+            <td><button onclick="togglePurchaseDetail(${idx})">상세보기</button></td>
+          </tr>
+          <tr class="purchase-detail-row" id="purchase-detail-${idx}" style="display:none;">
+            <td colspan="10">
+              <div>
+                <b>발주번호:</b> ${p.purchaseNumber} <b>주문번호:</b> ${p.orderId}<br>
+                <b>제품명:</b> ${p.itemName || ''} <b>제품코드:</b> ${p.itemCode || ''} <b>색상:</b> ${p.color || ''}<br>
+                <b>사이즈별 수량:</b> 110: ${p.size_110} / 120: ${p.size_120} / 130: ${p.size_130} / 140: ${p.size_140} / 150: ${p.size_150} / 160: ${p.size_160} / XS: ${p.size_XS} / S: ${p.size_S} / M: ${p.size_M} / L: ${p.size_L} / XL: ${p.size_XL} / 2XL: ${p.size_2XL} / 3XL: ${p.size_3XL} / 4XL: ${p.size_4XL} / 5XL: ${p.size_5XL} / LL: ${p.size_LL} / 3L: ${p.size_3L} / 4L: ${p.size_4L} / 5L: ${p.size_5L} / free: ${p.size_free} / custom: ${p.size_custom}<br>
+                <b>총발주수량:</b> ${p.totalQuantity} <b>총금액:</b> ${p.totalPurchasePrice}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function togglePurchaseDetail(idx) {
+      const row = document.getElementById('purchase-detail-' + idx);
+      row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+
+    async function deletePurchase(purchaseNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/purchases/' + purchaseNumber, { method: 'DELETE' });
+        loadPurchases();
+      }
+    }
+
+    function setStatus(purchaseNumber, status) {
+      editPurchase(purchaseNumber, 'purchaseStatus', status);
+      savePurchase(purchaseNumber);
+    }
+
+    // 디자인 등록
+    async function submitDesign() {
+      const form = document.querySelector('#designForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.title) {
+        alert('제목은 필수입니다.');
+        return;
+      }
+      if (!data.status) delete data.status; // 기본값 사용
+      if (!data.orderId) data.orderId = null; // 빈 값은 null로
+      const res = await fetch('/api/designs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('디자인 등록 완료: ' + json.designNumber);
+      form.reset();
+      loadDesigns();
+    }
+
+    // 디자인 전체 조회 및 테이블 렌더링
+    async function loadDesigns() {
+      // 주문번호 리스트 불러오기
+      const orderRes = await fetch('/api/orders');
+      const orderList = await orderRes.json();
+      // 등록 폼 드롭다운 세팅
+      const orderSelect = document.getElementById('designOrderSelect');
+      orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
+      orderList.forEach(order => {
+        orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+      });
+
+      // 디자인 목록 불러오기
+      const res = await fetch('/api/designs');
+      const list = await res.json();
+      if (!Array.isArray(list)) {
+        alert('디자인 목록을 불러오지 못했습니다: ' + (list.error || JSON.stringify(list)));
+        return;
+      }
+      const tbody = document.querySelector('#designTable tbody');
+      tbody.innerHTML = '';
+      list.forEach(d => {
+        // 각 행별 주문번호 드롭다운 생성
+        let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
+        orderList.forEach(order => {
+          orderOptions += `<option value="${order.orderId}" ${d.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+        });
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.designNumber}</td>
+            <td><select onchange="editDesign('${d.designNumber}', 'orderId', this.value)">${orderOptions}</select></td>
+            <td><input value="${d.title||''}" onchange="editDesign('${d.designNumber}', 'title', this.value)"></td>
+            <td><input value="${d.description||''}" onchange="editDesign('${d.designNumber}', 'description', this.value)"></td>
+            <td><input value="${d.driveLink||''}" onchange="editDesign('${d.designNumber}', 'driveLink', this.value)"></td>
+            <td>
+              <select onchange="editDesign('${d.designNumber}', 'status', this.value)">
+                <option value="착수전" ${d.status==='착수전'?'selected':''}>착수전</option>
+                <option value="요청됨" ${d.status==='요청됨'?'selected':''}>요청됨</option>
+                <option value="진행중" ${d.status==='진행중'?'selected':''}>진행중</option>
+                <option value="수정요청" ${d.status==='수정요청'?'selected':''}>수정요청</option>
+                <option value="작업완료" ${d.status==='작업완료'?'selected':''}>작업완료</option>
+                <option value="확정" ${d.status==='확정'?'selected':''}>확정</option>
+              </select>
+            </td>
+            <td><input value="${d.createdBy||''}" onchange="editDesign('${d.designNumber}', 'createdBy', this.value)"></td>
+            <td>${d.createdAt ? d.createdAt.slice(0,19).replace('T',' ') : ''}</td>
+            <td><button onclick="saveDesign('${d.designNumber}')">저장</button></td>
+            <td><button onclick="deleteDesign('${d.designNumber}')">삭제</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    // 디자인 수정/저장용 임시 객체
+    const designEdits = {};
+    function editDesign(designNumber, field, value) {
+      if(!designEdits[designNumber]) designEdits[designNumber] = {};
+      designEdits[designNumber][field] = value || null;
+    }
+    async function saveDesign(designNumber) {
+      await fetch('/api/designs/' + designNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(designEdits[designNumber])
+      });
+      alert('저장 완료');
+      loadDesigns();
+    }
+    // 디자인 삭제
+    async function deleteDesign(designNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/designs/' + designNumber, { method: 'DELETE' });
+        loadDesigns();
+      }
+    }
+
+    // 인쇄 등록
+    async function submitPrint() {
+      const form = document.querySelector('#printForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.printMethod || !data.factoryName) {
+        alert('인쇄방식, 인쇄소명은 필수입니다.');
+        return;
+      }
+      if (!data.orderId) data.orderId = null;
+      const res = await fetch('/api/prints', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('인쇄 등록 완료: ' + json.printNumber);
+      form.reset();
+      loadPrints();
+    }
+
+    // 인쇄 전체 조회 및 테이블 렌더링
+    async function loadPrints() {
+      // 주문번호 리스트 불러오기
+      const orderRes = await fetch('/api/orders');
+      const orderList = await orderRes.json();
+      // 등록 폼 드롭다운 세팅
+      const orderSelect = document.getElementById('printOrderSelect');
+      orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
+      orderList.forEach(order => {
+        orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+      });
+
+      // 인쇄 목록 불러오기
+      const res = await fetch('/api/prints');
+      const list = await res.json();
+      const tbody = document.querySelector('#printTable tbody');
+      tbody.innerHTML = '';
+      list.forEach(p => {
+        let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
+        orderList.forEach(order => {
+          orderOptions += `<option value="${order.orderId}" ${p.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+        });
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.printNumber}</td>
+            <td><select onchange="editPrint('${p.printNumber}', 'orderId', this.value)">${orderOptions}</select></td>
+            <td><input value="${p.printMethod||''}" onchange="editPrint('${p.printNumber}', 'printMethod', this.value)"></td>
+            <td><input value="${p.factoryName||''}" onchange="editPrint('${p.printNumber}', 'factoryName', this.value)"></td>
+            <td><input type="date" value="${p.expectedDate||''}" onchange="editPrint('${p.printNumber}', 'expectedDate', this.value)"></td>
+            <td>
+              <select onchange="editPrint('${p.printNumber}', 'status', this.value)">
+                <option value="발주전" ${p.status==='발주전'?'selected':''}>발주전</option>
+                <option value="발주요청" ${p.status==='발주요청'?'selected':''}>발주요청</option>
+                <option value="발주완료" ${p.status==='발주완료'?'selected':''}>발주완료</option>
+                <option value="작업완료" ${p.status==='작업완료'?'selected':''}>작업완료</option>
+              </select>
+            </td>
+            <td><button onclick="savePrint('${p.printNumber}')">저장</button></td>
+            <td><button onclick="deletePrint('${p.printNumber}')">삭제</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    // 인쇄 수정/저장용 임시 객체
+    const printEdits = {};
+    function editPrint(printNumber, field, value) {
+      if(!printEdits[printNumber]) printEdits[printNumber] = {};
+      printEdits[printNumber][field] = value || null;
+    }
+    async function savePrint(printNumber) {
+      await fetch('/api/prints/' + printNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(printEdits[printNumber])
+      });
+      alert('저장 완료');
+      loadPrints();
+    }
+    async function deletePrint(printNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/prints/' + printNumber, { method: 'DELETE' });
+        loadPrints();
+      }
+    }
+
+    // 카탈로그 드롭다운 연동
+    async function loadCatalog() {
+      // 대분류
+      const mainRes = await fetch('/api/catalog/main-categories');
+      const mainList = await mainRes.json();
+      const mainSel = document.getElementById('mainCategorySelect');
+      mainSel.innerHTML = '<option value="">대분류 선택</option>';
+      mainList.forEach(m => mainSel.innerHTML += `<option value="${m}">${m}</option>`);
+    }
+    async function handleCatalogChange(level) {
+      const mainSel = document.getElementById('mainCategorySelect');
+      const brandSel = document.getElementById('brandNameSelect');
+      const subSel = document.getElementById('subCategorySelect');
+      const itemSel = document.getElementById('itemNameSelect');
+      if(level==='main') {
+        brandSel.innerHTML = '<option value="">브랜드 선택</option>';
+        subSel.innerHTML = '<option value="">소분류 선택</option>';
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value) {
+          const res = await fetch(`/api/catalog/brands?main_category=${encodeURIComponent(mainSel.value)}`);
+          const list = await res.json();
+          list.forEach(b => brandSel.innerHTML += `<option value="${b}">${b}</option>`);
+        }
+      }
+      if(level==='brand') {
+        subSel.innerHTML = '<option value="">소분류 선택</option>';
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value && brandSel.value) {
+          const res = await fetch(`/api/catalog/sub-categories?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}`);
+          const list = await res.json();
+          list.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
+        }
+      }
+      if(level==='sub') {
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value && brandSel.value && subSel.value) {
+          const res = await fetch(`/api/catalog/items?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}&sub_category=${encodeURIComponent(subSel.value)}`);
+          const list = await res.json();
+          list.forEach(i => itemSel.innerHTML += `<option value="${i.item_name}" data-code="${i.item_code}" data-color="${i.color_ko}">${i.item_name}</option>`);
+        }
+      }
+    }
+    document.getElementById('mainCategorySelect').addEventListener('change', ()=>handleCatalogChange('main'));
+    document.getElementById('brandNameSelect').addEventListener('change', ()=>handleCatalogChange('brand'));
+    document.getElementById('subCategorySelect').addEventListener('change', ()=>handleCatalogChange('sub'));
+    document.getElementById('itemNameSelect').addEventListener('change', async function() {
+      const itemName = this.value;
+      const colorSel = document.getElementById('colorSelect');
+      colorSel.innerHTML = '<option value="">색상 선택</option>';
+      if(itemName) {
+        const res = await fetch('/api/catalog/colors?item_name=' + encodeURIComponent(itemName));
+        const list = await res.json();
+        list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
+      }
+    });
+    window.addEventListener('DOMContentLoaded', loadCatalog);
+
+    // 제품명/제품코드 검색형 자동완성
+    const productSearchInput = document.getElementById('productSearchInput');
+    const productSearchList = document.getElementById('productSearchList');
+    productSearchInput.addEventListener('input', async function() {
+      const q = this.value.trim();
+      if(q.length < 2) { productSearchList.innerHTML = ''; return; }
+      const res = await fetch('/api/catalog/search-items?query=' + encodeURIComponent(q));
+      const list = await res.json();
+      if(list.length === 0) { productSearchList.innerHTML = '<div style="background:#fff;border:1px solid #aaa;">검색 결과 없음</div>'; return; }
+      productSearchList.innerHTML = list.map(i => `<div style='background:#fff;border:1px solid #aaa;cursor:pointer;padding:2px;' onclick='selectProductFromSearch(${JSON.stringify(i)})'>${i.item_name} (${i.item_code}) - ${i.brand_name} / ${i.main_category} / ${i.sub_category}</div>`).join('');
+    });
+    function selectProductFromSearch(item) {
+      // 드롭다운 값 자동 세팅
+      document.getElementById('mainCategorySelect').value = item.main_category;
+      handleCatalogChange('main').then(()=>{
+        document.getElementById('subCategorySelect').value = item.sub_category;
+        handleCatalogChange('sub').then(()=>{
+          document.getElementById('brandNameSelect').value = item.brand_name;
+          handleCatalogChange('brand').then(()=>{
+            document.getElementById('itemNameSelect').value = item.item_name;
+            // itemName 드롭다운 값이 실제로 선택되도록 보장
+            // 상세정보 자동입력
+            document.getElementById('itemCodeInput').value = item.item_code;
+            // 색상 드롭다운도 자동 세팅
+            const colorSel = document.getElementById('colorSelect');
+            colorSel.innerHTML = '<option value="">색상 선택</option>';
+            fetch('/api/catalog/colors?item_name=' + encodeURIComponent(item.item_name)).then(r=>r.json()).then(list=>{
+              list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
+            });
+            productSearchList.innerHTML = '';
+            productSearchInput.value = item.item_name + ' (' + item.item_code + ')';
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html>
