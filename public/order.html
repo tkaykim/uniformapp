@@ -60,7 +60,7 @@
     <!-- 오버레이 (모바일) -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-30 z-30 hidden md:hidden"></div>
     <!-- 메인 콘텐츠 -->
-    <main class="flex-1 md:ml-64 p-4 md:p-10 transition-all duration-300 max-w-3xl mx-auto w-full">
+    <main class="flex-1 md:ml-64 p-4 md:p-10 transition-all duration-300 max-w-7xl mx-auto w-full">
       <!-- 주문 등록 -->
       <div id="order" class="tab-content fade-enter-active">
         <div class="mb-8">
@@ -212,8 +212,8 @@
       <div id="orderList" class="tab-content hidden fade-enter-active">
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-800 mb-4">주문 조회</h1>
-          <div class="bg-white rounded-2xl shadow-lg p-6">
-            <div class="overflow-x-auto">
+          <div class="bg-white rounded-2xl shadow-lg p-4 md:p-8 w-full max-w-none">
+            <div class="overflow-x-auto w-full">
               <table class="table w-full text-sm text-left border-separate border-spacing-y-2 min-w-[1200px] whitespace-nowrap" id="orderTable">
                 <thead>
                   <tr class="bg-gray-100">
