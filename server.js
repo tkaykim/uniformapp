@@ -61,7 +61,7 @@ app.get('/api/prints', (req, res) => {
 
 // === catalog API ===
 app.get('/api/catalog/main-categories', (req, res) => {
-  itemsDb.all('SELECT DISTINCT mainCategory FROM catalog ORDER BY mainCategory ASC', (err, rows) => {
+  itemsDb.all('SELECT DISTINCT main_category FROM productCatalog ORDER BY main_category ASC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows.map(r => r.mainCategory));
   });
@@ -69,7 +69,7 @@ app.get('/api/catalog/main-categories', (req, res) => {
 
 app.get('/api/catalog/sub-categories', (req, res) => {
   const { mainCategory } = req.query;
-  itemsDb.all('SELECT DISTINCT subCategory FROM catalog WHERE mainCategory = ? ORDER BY subCategory ASC', [mainCategory], (err, rows) => {
+  itemsDb.all('SELECT DISTINCT sub_category FROM productCatalog WHERE main_category=? AND brand_name=? ORDER BY sub_category ASC', [mainCategory], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows.map(r => r.subCategory));
   });
@@ -77,7 +77,7 @@ app.get('/api/catalog/sub-categories', (req, res) => {
 
 app.get('/api/catalog/items', (req, res) => {
   const { mainCategory, subCategory } = req.query;
-  itemsDb.all('SELECT DISTINCT itemName FROM catalog WHERE mainCategory = ? AND subCategory = ? ORDER BY itemName ASC', [mainCategory, subCategory], (err, rows) => {
+  itemsDb.all('SELECT * FROM productCatalog WHERE main_category=? AND brand_name=? AND sub_category=? ORDER BY item_name ASC', [mainCategory, subCategory], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows.map(r => r.itemName));
   });
@@ -85,7 +85,7 @@ app.get('/api/catalog/items', (req, res) => {
 
 app.get('/api/catalog/brands', (req, res) => {
   const { mainCategory, subCategory, itemName } = req.query;
-  itemsDb.all('SELECT DISTINCT brandName FROM catalog WHERE mainCategory = ? AND subCategory = ? AND itemName = ? ORDER BY brandName ASC', [mainCategory, subCategory, itemName], (err, rows) => {
+  itemsDb.all('SELECT DISTINCT brand_name FROM productCatalog WHERE main_category=? ORDER BY brand_name ASC', [mainCategory, subCategory, itemName], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows.map(r => r.brandName));
   });
@@ -93,7 +93,7 @@ app.get('/api/catalog/brands', (req, res) => {
 
 app.get('/api/catalog/colors', (req, res) => {
   const { mainCategory, subCategory, itemName, brandName } = req.query;
-  itemsDb.all('SELECT DISTINCT color FROM catalog WHERE mainCategory = ? AND subCategory = ? AND itemName = ? AND brandName = ? ORDER BY color ASC', [mainCategory, subCategory, itemName, brandName], (err, rows) => {
+  itemsDb.all('SELECT DISTINCT color_ko FROM productCatalog WHERE item_name=? ORDER BY color_ko ASC', [mainCategory, subCategory, itemName, brandName], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows.map(r => r.color));
   });
@@ -101,11 +101,18 @@ app.get('/api/catalog/colors', (req, res) => {
 
 app.get('/api/catalog/search-items', (req, res) => {
   const { query } = req.query;
-  const q = `%${query}%`;
-  const sql = `SELECT * FROM catalog WHERE mainCategory LIKE ? OR subCategory LIKE ? OR itemName LIKE ? OR brandName LIKE ? OR color LIKE ? LIMIT 50`;
-  itemsDb.all(sql, [q, q, q, q, q], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+  if (!query || query.length < 2) return res.json([]);
+  itemsDb.all(
+    `SELECT item_name, item_code, brand_name, main_category, sub_category, MIN(product_id) as product_id
+     FROM productCatalog
+     WHERE item_name LIKE ? OR item_code LIKE ?
+     GROUP BY item_name, item_code, brand_name, main_category, sub_category
+     ORDER BY item_name
+     LIMIT 20`,
+    [`%${query}%`, `%${query}%`],
+    (err, rows) => {
+      if (err) return res.status(500).json({error: err.message});
+      res.json(rows);
   });
 });
 
