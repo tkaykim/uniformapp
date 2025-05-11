@@ -506,10 +506,11 @@
             <td><input value="${p.color || ''}" onchange="editPurchase('${p.purchaseNumber}', 'color', this.value)"></td>
             <td>${p.totalQuantity}</td>
             <td>
-              <button onclick="setStatus('${p.purchaseNumber}', '발주전')">발주전</button>
-              <button onclick="setStatus('${p.purchaseNumber}', '발주신청')">발주신청</button>
-              <button onclick="setStatus('${p.purchaseNumber}', '발주완료')">발주완료</button>
-              (${p.purchaseStatus})
+              <select onchange="editPurchase('${p.purchaseNumber}', 'purchaseStatus', this.value)" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition">
+                <option value="발주전" ${p.purchaseStatus==='발주전'?'selected':''}>발주전</option>
+                <option value="발주신청" ${p.purchaseStatus==='발주신청'?'selected':''}>발주신청</option>
+                <option value="발주완료" ${p.purchaseStatus==='발주완료'?'selected':''}>발주완료</option>
+              </select>
             </td>
             <td class="space-x-2 flex flex-row">
               <button onclick="savePurchase('${p.purchaseNumber}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2"><i class='fas fa-save mr-1'></i>저장</button>
