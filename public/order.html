@@ -808,6 +808,12 @@
         });
       });
     }
+    async function deletePurchase(purchaseNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/purchases/' + purchaseNumber, { method: 'DELETE' });
+        loadPurchases();
+      }
+    }
   </script>
 </body>
 </html>
