@@ -60,7 +60,7 @@
     <!-- 오버레이 (모바일) -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-30 z-30 hidden md:hidden"></div>
     <!-- 메인 콘텐츠 -->
-    <main class="flex-1 md:ml-4 p-4 md:p-8 transition-all duration-300 w-full ml-0">
+    <main class="flex-1 md:ml-5 p-4 md:p-8 transition-all duration-300 w-full ml-0">
       <!-- 주문 등록 -->
       <div id="order" class="tab-content fade-enter-active">
         <div class="mb-8">
@@ -432,7 +432,7 @@
             <td>${o.totalQuantity}</td>
             <td><input value="${o.totalPrice}" onchange="editOrder('${o.orderId}', 'totalPrice', this.value)" class="border rounded px-2 py-1 w-24 text-right" /></td>
             <td>${purchaseStatus}</td>
-            <td class="space-x-2">
+            <td class="space-x-2 flex flex-row">
               <button onclick="saveOrder('${o.orderId}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2"><i class="fas fa-save mr-1"></i>저장</button>
               <button onclick="deleteOrder('${o.orderId}')" class="bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2"><i class="fas fa-trash-alt mr-1"></i>삭제</button>
               <button onclick="toggleOrderDetail(${idx})" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2"><i class="fas fa-info-circle mr-1"></i>상세보기</button>
