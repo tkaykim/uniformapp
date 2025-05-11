@@ -1,436 +1,811 @@
-// ... 기존 <script> 코드 ...
-// 아래에 기존 함수 전체 복원
-
-// 주문 등록
-async function submitOrder() {
-  const form = document.querySelector('#orderForm');
-  const data = Object.fromEntries(new FormData(form).entries());
-  // itemName 값이 비어있으면 드롭다운에서 강제로 할당
-  if (!data.itemName) {
-    const itemNameSelect = document.getElementById('itemNameSelect');
-    data.itemName = itemNameSelect.value;
-  }
-  ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
-  const res = await fetch('/api/orders', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  const json = await res.json();
-  alert('등록 완료: ' + JSON.stringify(json));
-  form.reset();
-}
-
-// 주문 조회
-async function loadOrders() {
-  const res = await fetch('/api/orders');
-  const orders = await res.json();
-  // 발주 리스트도 불러오기
-  const pres = await fetch('/api/purchases');
-  const purchases = await pres.json();
-  const tbody = document.querySelector('#orderTable tbody');
-  tbody.innerHTML = '';
-  orders.forEach((o, idx) => {
-    // 주문에 해당하는 발주 찾기
-    const purchase = purchases.find(p => p.orderId === o.orderId);
-    const purchaseStatus = purchase ? purchase.purchaseStatus : '없음';
-    tbody.innerHTML += `
-      <tr>
-        <td>${o.orderId}</td>
-        <td><input value="${o.groupName}" onchange="editOrder('${o.orderId}', 'groupName', this.value)"></td>
-        <td><input value="${o.itemName}" onchange="editOrder('${o.orderId}', 'itemName', this.value)"></td>
-        <td>${o.totalQuantity}</td>
-        <td><input value="${o.totalPrice}" onchange="editOrder('${o.orderId}', 'totalPrice', this.value)"></td>
-        <td>${purchaseStatus}</td>
-        <td><button onclick="saveOrder('${o.orderId}')">저장</button></td>
-        <td><button onclick="deleteOrder('${o.orderId}')">삭제</button></td>
-        <td><button onclick="toggleOrderDetail(${idx})">상세보기</button></td>
-      </tr>
-      <tr class="order-detail-row" id="order-detail-${idx}" style="display:none;">
-        <td colspan="9">
-          <div>
-            <b>주문번호:</b> ${o.orderId} <b>대표자명:</b> ${o.representativeName} <b>연락처:</b> ${o.representativePhone}<br>
-            <b>품명:</b> ${o.itemName} <b>색상:</b> ${o.color}<br>
-            <b>사이즈별 수량:</b> 110: ${o.size_110} / 120: ${o.size_120} / 130: ${o.size_130} / 140: ${o.size_140} / 150: ${o.size_150} / 160: ${o.size_160} / XS: ${o.size_XS} / S: ${o.size_S} / M: ${o.size_M} / L: ${o.size_L} / XL: ${o.size_XL} / 2XL: ${o.size_2XL} / 3XL: ${o.size_3XL} / 4XL: ${o.size_4XL} / 5XL: ${o.size_5XL} / LL: ${o.size_LL} / 3L: ${o.size_3L} / 4L: ${o.size_4L} / 5L: ${o.size_5L} / free: ${o.size_free} / custom: ${o.size_custom}<br>
-            <b>총수량:</b> ${o.totalQuantity} <b>금액:</b> ${o.totalPrice}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>유니폼 주문/발주 시스템</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .fade-enter { opacity: 0; transition: opacity 0.3s; }
+    .fade-enter-active { opacity: 1; }
+    .fade-leave { opacity: 1; transition: opacity 0.3s; }
+    .fade-leave-active { opacity: 0; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <!-- 모바일 햄버거 헤더 -->
+  <header class="md:hidden flex items-center justify-between p-4 bg-white shadow z-30 sticky top-0">
+    <div class="font-bold text-lg text-blue-700 flex items-center gap-2">
+      <i class="fas fa-tshirt"></i> 유니폼 시스템
+    </div>
+    <button id="menuToggle" class="text-2xl focus:outline-none"><i class="fas fa-bars"></i></button>
+  </header>
+  <div class="flex min-h-screen">
+    <!-- 사이드바 -->
+    <aside id="sidebar" class="fixed md:static z-40 top-0 left-0 h-full w-64 bg-white shadow-lg flex-col gap-2 p-6 hidden md:flex transition-transform duration-300">
+      <div class="font-bold text-xl text-blue-700 flex items-center gap-2 mb-8">
+        <i class="fas fa-tshirt"></i> 유니폼 시스템
+      </div>
+      <ul class="space-y-2">
+        <li>
+          <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-100 transition active:bg-blue-200" onclick="showTab('order')">
+            <i class="fas fa-plus-circle"></i> 주문 등록
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-100 transition" onclick="showTab('orderList')">
+            <i class="fas fa-list"></i> 주문 조회
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-100 transition" onclick="showTab('purchaseList')">
+            <i class="fas fa-shopping-cart"></i> 발주 조회
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-100 transition" onclick="showTab('designList')">
+            <i class="fas fa-palette"></i> 디자인 관리
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-blue-100 transition" onclick="showTab('printList')">
+            <i class="fas fa-print"></i> 인쇄 관리
+          </a>
+        </li>
+      </ul>
+    </aside>
+    <!-- 오버레이 (모바일) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-30 z-30 hidden md:hidden"></div>
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-1 md:ml-64 p-4 md:p-10 transition-all duration-300 max-w-3xl mx-auto w-full">
+      <!-- 주문 등록 -->
+      <div id="order" class="tab-content fade-enter-active">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4">주문 등록</h1>
+          <div class="bg-white rounded-2xl shadow-lg p-6">
+            <form id="orderForm" class="space-y-6">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">단체 정보</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input name="groupName" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="단체명">
+                  <input name="representativeName" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="대표자명">
+                  <input name="representativePhone" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="연락처">
+                  <input name="managerName" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="담당자">
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">제품 정보</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <select name="mainCategory" id="mainCategorySelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" required>
+                    <option value="">대분류 선택</option>
+                  </select>
+                  <select name="subCategory" id="subCategorySelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" required>
+                    <option value="">소분류 선택</option>
+                  </select>
+                  <select name="brandName" id="brandNameSelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" required>
+                    <option value="">브랜드 선택</option>
+                  </select>
+                  <select name="itemName" id="itemNameSelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" required>
+                    <option value="">제품명 선택</option>
+                  </select>
+                </div>
+                <div class="relative mt-4">
+                  <input name="productSearch" id="productSearchInput" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="제품명/제품코드 검색(2글자 이상)" autocomplete="off">
+                  <div id="productSearchList" class="absolute left-0 right-0 bg-white rounded-lg shadow-lg mt-1 z-20"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <input name="itemCode" id="itemCodeInput" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="제품코드" readonly>
+                  <select name="color" id="colorSelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" required>
+                    <option value="">색상 선택</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">수량 정보</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">110</label>
+                    <input name="size_110" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">120</label>
+                    <input name="size_120" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">130</label>
+                    <input name="size_130" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">140</label>
+                    <input name="size_140" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">150</label>
+                    <input name="size_150" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">160</label>
+                    <input name="size_160" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">XS</label>
+                    <input name="size_XS" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">S</label>
+                    <input name="size_S" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">M</label>
+                    <input name="size_M" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">L</label>
+                    <input name="size_L" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">XL</label>
+                    <input name="size_XL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">2XL</label>
+                    <input name="size_2XL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">3XL</label>
+                    <input name="size_3XL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">4XL</label>
+                    <input name="size_4XL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">5XL</label>
+                    <input name="size_5XL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">LL</label>
+                    <input name="size_LL" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">3L</label>
+                    <input name="size_3L" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">4L</label>
+                    <input name="size_4L" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">5L</label>
+                    <input name="size_5L" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">FREE</label>
+                    <input name="size_free" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">CUSTOM</label>
+                    <input name="size_custom" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">금액 정보</h3>
+                <input name="totalPrice" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="총금액">
+              </div>
+              <div class="flex gap-3 mt-6">
+                <button type="button" class="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2" onclick="submitOrder()">
+                  <i class="fas fa-save"></i> 등록
+                </button>
+                <button type="reset" class="btn btn-secondary bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2">
+                  <i class="fas fa-undo"></i> 초기화
+                </button>
+              </div>
+            </form>
           </div>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-function toggleOrderDetail(idx) {
-  const row = document.getElementById('order-detail-' + idx);
-  row.style.display = row.style.display === 'none' ? '' : 'none';
-}
-
-async function deleteOrder(orderId) {
-  if(confirm('정말 삭제하시겠습니까?')) {
-    await fetch('/api/orders/' + orderId, { method: 'DELETE' });
-    loadOrders();
-  }
-}
-
-// 수정/저장용 임시 객체
-const orderEdits = {};
-function editOrder(orderId, field, value) {
-  if(!orderEdits[orderId]) orderEdits[orderId] = {};
-  orderEdits[orderId][field] = value;
-}
-async function saveOrder(orderId) {
-  await fetch('/api/orders/' + orderId, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(orderEdits[orderId])
-  });
-  alert('저장 완료');
-  loadOrders();
-}
-
-const purchaseEdits = {};
-function editPurchase(purchaseNumber, field, value) {
-  if(!purchaseEdits[purchaseNumber]) purchaseEdits[purchaseNumber] = {};
-  purchaseEdits[purchaseNumber][field] = value;
-}
-async function savePurchase(purchaseNumber) {
-  await fetch('/api/purchases/' + purchaseNumber, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(purchaseEdits[purchaseNumber])
-  });
-  alert('저장 완료');
-  loadPurchases();
-}
-
-// 발주 조회
-async function loadPurchases() {
-  const res = await fetch('/api/purchases');
-  const list = await res.json();
-  const tbody = document.querySelector('#purchaseTable tbody');
-  tbody.innerHTML = '';
-  list.forEach((p, idx) => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${p.orderId}</td>
-        <td>${p.groupName || ''}</td>
-        <td><input value="${p.managerName || ''}" onchange="editPurchase('${p.purchaseNumber}', 'managerName', this.value)"></td>
-        <td>${p.purchaseNumber}</td>
-        <td><input value="${p.color || ''}" onchange="editPurchase('${p.purchaseNumber}', 'color', this.value)"></td>
-        <td>${p.totalQuantity}</td>
-        <td>
-          <button onclick="setStatus('${p.purchaseNumber}', '발주전')">발주전</button>
-          <button onclick="setStatus('${p.purchaseNumber}', '발주신청')">발주신청</button>
-          <button onclick="setStatus('${p.purchaseNumber}', '발주완료')">발주완료</button>
-          (${p.purchaseStatus})
-        </td>
-        <td><button onclick="savePurchase('${p.purchaseNumber}')">저장</button></td>
-        <td><button onclick="deletePurchase('${p.purchaseNumber}')">삭제</button></td>
-        <td><button onclick="togglePurchaseDetail(${idx})">상세보기</button></td>
-      </tr>
-      <tr class="purchase-detail-row" id="purchase-detail-${idx}" style="display:none;">
-        <td colspan="10">
-          <div>
-            <b>발주번호:</b> ${p.purchaseNumber} <b>주문번호:</b> ${p.orderId}<br>
-            <b>제품명:</b> ${p.itemName || ''} <b>제품코드:</b> ${p.itemCode || ''} <b>색상:</b> ${p.color || ''}<br>
-            <b>사이즈별 수량:</b> 110: ${p.size_110} / 120: ${p.size_120} / 130: ${p.size_130} / 140: ${p.size_140} / 150: ${p.size_150} / 160: ${p.size_160} / XS: ${p.size_XS} / S: ${p.size_S} / M: ${p.size_M} / L: ${p.size_L} / XL: ${p.size_XL} / 2XL: ${p.size_2XL} / 3XL: ${p.size_3XL} / 4XL: ${p.size_4XL} / 5XL: ${p.size_5XL} / LL: ${p.size_LL} / 3L: ${p.size_3L} / 4L: ${p.size_4L} / 5L: ${p.size_5L} / free: ${p.size_free} / custom: ${p.size_custom}<br>
-            <b>총발주수량:</b> ${p.totalQuantity} <b>총금액:</b> ${p.totalPurchasePrice}
+        </div>
+      </div>
+      <!-- 주문 조회 -->
+      <div id="orderList" class="tab-content hidden fade-enter-active">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4">주문 조회</h1>
+          <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="overflow-x-auto">
+              <table class="table w-full text-sm text-left border-separate border-spacing-y-2" id="orderTable">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4">주문번호</th>
+                    <th class="py-3 px-4">단체명</th>
+                    <th class="py-3 px-4">품명</th>
+                    <th class="py-3 px-4">전체수량</th>
+                    <th class="py-3 px-4">총매출</th>
+                    <th class="py-3 px-4">발주상태</th>
+                    <th class="py-3 px-4">관리</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-function togglePurchaseDetail(idx) {
-  const row = document.getElementById('purchase-detail-' + idx);
-  row.style.display = row.style.display === 'none' ? '' : 'none';
-}
-
-async function deletePurchase(purchaseNumber) {
-  if(confirm('정말 삭제하시겠습니까?')) {
-    await fetch('/api/purchases/' + purchaseNumber, { method: 'DELETE' });
-    loadPurchases();
-  }
-}
-
-function setStatus(purchaseNumber, status) {
-  editPurchase(purchaseNumber, 'purchaseStatus', status);
-  savePurchase(purchaseNumber);
-}
-
-// 디자인 등록
-async function submitDesign() {
-  const form = document.querySelector('#designForm');
-  const data = Object.fromEntries(new FormData(form).entries());
-  if (!data.title) {
-    alert('제목은 필수입니다.');
-    return;
-  }
-  if (!data.status) delete data.status; // 기본값 사용
-  if (!data.orderId) data.orderId = null; // 빈 값은 null로
-  const res = await fetch('/api/designs', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  const json = await res.json();
-  alert('디자인 등록 완료: ' + json.designNumber);
-  form.reset();
-  loadDesigns();
-}
-
-// 디자인 전체 조회 및 테이블 렌더링
-async function loadDesigns() {
-  // 주문번호 리스트 불러오기
-  const orderRes = await fetch('/api/orders');
-  const orderList = await orderRes.json();
-  // 등록 폼 드롭다운 세팅
-  const orderSelect = document.getElementById('designOrderSelect');
-  orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
-  orderList.forEach(order => {
-    orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
-  });
-
-  // 디자인 목록 불러오기
-  const res = await fetch('/api/designs');
-  const list = await res.json();
-  if (!Array.isArray(list)) {
-    alert('디자인 목록을 불러오지 못했습니다: ' + (list.error || JSON.stringify(list)));
-    return;
-  }
-  const tbody = document.querySelector('#designTable tbody');
-  tbody.innerHTML = '';
-  list.forEach(d => {
-    // 각 행별 주문번호 드롭다운 생성
-    let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
-    orderList.forEach(order => {
-      orderOptions += `<option value="${order.orderId}" ${d.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
-    });
-    tbody.innerHTML += `
-      <tr>
-        <td>${d.designNumber}</td>
-        <td><select onchange="editDesign('${d.designNumber}', 'orderId', this.value)">${orderOptions}</select></td>
-        <td><input value="${d.title||''}" onchange="editDesign('${d.designNumber}', 'title', this.value)"></td>
-        <td><input value="${d.description||''}" onchange="editDesign('${d.designNumber}', 'description', this.value)"></td>
-        <td><input value="${d.driveLink||''}" onchange="editDesign('${d.designNumber}', 'driveLink', this.value)"></td>
-        <td>
-          <select onchange="editDesign('${d.designNumber}', 'status', this.value)">
-            <option value="착수전" ${d.status==='착수전'?'selected':''}>착수전</option>
-            <option value="요청됨" ${d.status==='요청됨'?'selected':''}>요청됨</option>
-            <option value="진행중" ${d.status==='진행중'?'selected':''}>진행중</option>
-            <option value="수정요청" ${d.status==='수정요청'?'selected':''}>수정요청</option>
-            <option value="작업완료" ${d.status==='작업완료'?'selected':''}>작업완료</option>
-            <option value="확정" ${d.status==='확정'?'selected':''}>확정</option>
-          </select>
-        </td>
-        <td><input value="${d.createdBy||''}" onchange="editDesign('${d.designNumber}', 'createdBy', this.value)"></td>
-        <td>${d.createdAt ? d.createdAt.slice(0,19).replace('T',' ') : ''}</td>
-        <td><button onclick="saveDesign('${d.designNumber}')">저장</button></td>
-        <td><button onclick="deleteDesign('${d.designNumber}')">삭제</button></td>
-      </tr>
-    `;
-  });
-}
-
-// 디자인 수정/저장용 임시 객체
-const designEdits = {};
-function editDesign(designNumber, field, value) {
-  if(!designEdits[designNumber]) designEdits[designNumber] = {};
-  designEdits[designNumber][field] = value || null;
-}
-async function saveDesign(designNumber) {
-  await fetch('/api/designs/' + designNumber, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(designEdits[designNumber])
-  });
-  alert('저장 완료');
-  loadDesigns();
-}
-// 디자인 삭제
-async function deleteDesign(designNumber) {
-  if(confirm('정말 삭제하시겠습니까?')) {
-    await fetch('/api/designs/' + designNumber, { method: 'DELETE' });
-    loadDesigns();
-  }
-}
-
-// 인쇄 등록
-async function submitPrint() {
-  const form = document.querySelector('#printForm');
-  const data = Object.fromEntries(new FormData(form).entries());
-  if (!data.printMethod || !data.factoryName) {
-    alert('인쇄방식, 인쇄소명은 필수입니다.');
-    return;
-  }
-  if (!data.orderId) data.orderId = null;
-  const res = await fetch('/api/prints', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  const json = await res.json();
-  alert('인쇄 등록 완료: ' + json.printNumber);
-  form.reset();
-  loadPrints();
-}
-
-// 인쇄 전체 조회 및 테이블 렌더링
-async function loadPrints() {
-  // 주문번호 리스트 불러오기
-  const orderRes = await fetch('/api/orders');
-  const orderList = await orderRes.json();
-  // 등록 폼 드롭다운 세팅
-  const orderSelect = document.getElementById('printOrderSelect');
-  orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
-  orderList.forEach(order => {
-    orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
-  });
-
-  // 인쇄 목록 불러오기
-  const res = await fetch('/api/prints');
-  const list = await res.json();
-  const tbody = document.querySelector('#printTable tbody');
-  tbody.innerHTML = '';
-  list.forEach(p => {
-    let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
-    orderList.forEach(order => {
-      orderOptions += `<option value="${order.orderId}" ${p.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
-    });
-    tbody.innerHTML += `
-      <tr>
-        <td>${p.printNumber}</td>
-        <td><select onchange="editPrint('${p.printNumber}', 'orderId', this.value)">${orderOptions}</select></td>
-        <td><input value="${p.printMethod||''}" onchange="editPrint('${p.printNumber}', 'printMethod', this.value)"></td>
-        <td><input value="${p.factoryName||''}" onchange="editPrint('${p.printNumber}', 'factoryName', this.value)"></td>
-        <td><input type="date" value="${p.expectedDate||''}" onchange="editPrint('${p.printNumber}', 'expectedDate', this.value)"></td>
-        <td>
-          <select onchange="editPrint('${p.printNumber}', 'status', this.value)">
-            <option value="발주전" ${p.status==='발주전'?'selected':''}>발주전</option>
-            <option value="발주요청" ${p.status==='발주요청'?'selected':''}>발주요청</option>
-            <option value="발주완료" ${p.status==='발주완료'?'selected':''}>발주완료</option>
-            <option value="작업완료" ${p.status==='작업완료'?'selected':''}>작업완료</option>
-          </select>
-        </td>
-        <td><button onclick="savePrint('${p.printNumber}')">저장</button></td>
-        <td><button onclick="deletePrint('${p.printNumber}')">삭제</button></td>
-      </tr>
-    `;
-  });
-}
-
-// 인쇄 수정/저장용 임시 객체
-const printEdits = {};
-function editPrint(printNumber, field, value) {
-  if(!printEdits[printNumber]) printEdits[printNumber] = {};
-  printEdits[printNumber][field] = value || null;
-}
-async function savePrint(printNumber) {
-  await fetch('/api/prints/' + printNumber, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(printEdits[printNumber])
-  });
-  alert('저장 완료');
-  loadPrints();
-}
-async function deletePrint(printNumber) {
-  if(confirm('정말 삭제하시겠습니까?')) {
-    await fetch('/api/prints/' + printNumber, { method: 'DELETE' });
-    loadPrints();
-  }
-}
-
-// 카탈로그 드롭다운 연동
-async function loadCatalog() {
-  // 대분류
-  const mainRes = await fetch('/api/catalog/main-categories');
-  const mainList = await mainRes.json();
-  const mainSel = document.getElementById('mainCategorySelect');
-  mainSel.innerHTML = '<option value="">대분류 선택</option>';
-  mainList.forEach(m => mainSel.innerHTML += `<option value="${m}">${m}</option>`);
-}
-async function handleCatalogChange(level) {
-  const mainSel = document.getElementById('mainCategorySelect');
-  const brandSel = document.getElementById('brandNameSelect');
-  const subSel = document.getElementById('subCategorySelect');
-  const itemSel = document.getElementById('itemNameSelect');
-  if(level==='main') {
-    brandSel.innerHTML = '<option value="">브랜드 선택</option>';
-    subSel.innerHTML = '<option value="">소분류 선택</option>';
-    itemSel.innerHTML = '<option value="">제품명 선택</option>';
-    if(mainSel.value) {
-      const res = await fetch(`/api/catalog/brands?main_category=${encodeURIComponent(mainSel.value)}`);
-      const list = await res.json();
-      list.forEach(b => brandSel.innerHTML += `<option value="${b}">${b}</option>`);
+        </div>
+      </div>
+      <!-- 발주 조회 -->
+      <div id="purchaseList" class="tab-content hidden fade-enter-active">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4">발주 조회</h1>
+          <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="overflow-x-auto">
+              <table class="table w-full text-sm text-left border-separate border-spacing-y-2" id="purchaseTable">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4">주문번호</th>
+                    <th class="py-3 px-4">단체명</th>
+                    <th class="py-3 px-4">담당자</th>
+                    <th class="py-3 px-4">발주번호</th>
+                    <th class="py-3 px-4">색상</th>
+                    <th class="py-3 px-4">총발주수량</th>
+                    <th class="py-3 px-4">발주상태</th>
+                    <th class="py-3 px-4">관리</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 디자인 관리 -->
+      <div id="designList" class="tab-content hidden fade-enter-active">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4">디자인 관리</h1>
+          <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <form id="designForm" class="space-y-4">
+              <select name="orderId" id="designOrderSelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition">
+                <option value="">주문번호 선택 (선택사항)</option>
+              </select>
+              <input name="title" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="디자인 제목" required>
+              <input name="description" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="설명">
+              <input name="driveLink" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="구글드라이브 링크">
+              <select name="status" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition">
+                <option value="">상태(기본: 착수전)</option>
+                <option value="착수전">착수전</option>
+                <option value="요청됨">요청됨</option>
+                <option value="진행중">진행중</option>
+                <option value="수정요청">수정요청</option>
+                <option value="작업완료">작업완료</option>
+                <option value="확정">확정</option>
+              </select>
+              <input name="createdBy" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="작성자">
+              <button type="button" class="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2" onclick="submitDesign()">
+                <i class="fas fa-save"></i> 등록
+              </button>
+            </form>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="overflow-x-auto">
+              <table class="table w-full text-sm text-left border-separate border-spacing-y-2" id="designTable">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4">디자인번호</th>
+                    <th class="py-3 px-4">주문번호</th>
+                    <th class="py-3 px-4">제목</th>
+                    <th class="py-3 px-4">설명</th>
+                    <th class="py-3 px-4">링크</th>
+                    <th class="py-3 px-4">상태</th>
+                    <th class="py-3 px-4">작성자</th>
+                    <th class="py-3 px-4">생성일</th>
+                    <th class="py-3 px-4">관리</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 인쇄 관리 -->
+      <div id="printList" class="tab-content hidden fade-enter-active">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4">인쇄 관리</h1>
+          <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <form id="printForm" class="space-y-4">
+              <select name="orderId" id="printOrderSelect" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition">
+                <option value="">주문번호 선택 (선택사항)</option>
+              </select>
+              <input name="printMethod" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="인쇄방식" required>
+              <input name="factoryName" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="인쇄소명" required>
+              <input name="factoryContact" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="인쇄소 연락처">
+              <input name="deliveryAddress" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="납품주소">
+              <input name="expectedDate" type="date" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="납기일">
+              <select name="status" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition">
+                <option value="발주전">발주전</option>
+                <option value="발주요청">발주요청</option>
+                <option value="발주완료">발주완료</option>
+                <option value="작업완료">작업완료</option>
+              </select>
+              <input name="memo" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="메모">
+              <button type="button" class="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2" onclick="submitPrint()">
+                <i class="fas fa-save"></i> 등록
+              </button>
+            </form>
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="overflow-x-auto">
+              <table class="table w-full text-sm text-left border-separate border-spacing-y-2" id="printTable">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4">인쇄번호</th>
+                    <th class="py-3 px-4">주문번호</th>
+                    <th class="py-3 px-4">인쇄방식</th>
+                    <th class="py-3 px-4">인쇄소명</th>
+                    <th class="py-3 px-4">납기일</th>
+                    <th class="py-3 px-4">상태</th>
+                    <th class="py-3 px-4">관리</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    // 모바일 햄버거 메뉴 토글
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuToggle = document.getElementById('menuToggle');
+    if(menuToggle) {
+      menuToggle.onclick = () => {
+        sidebar.classList.toggle('hidden');
+        overlay.classList.toggle('hidden');
+      };
+      overlay.onclick = () => {
+        sidebar.classList.add('hidden');
+        overlay.classList.add('hidden');
+      };
     }
-  }
-  if(level==='brand') {
-    subSel.innerHTML = '<option value="">소분류 선택</option>';
-    itemSel.innerHTML = '<option value="">제품명 선택</option>';
-    if(mainSel.value && brandSel.value) {
-      const res = await fetch(`/api/catalog/sub-categories?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}`);
-      const list = await res.json();
-      list.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
-    }
-  }
-  if(level==='sub') {
-    itemSel.innerHTML = '<option value="">제품명 선택</option>';
-    if(mainSel.value && brandSel.value && subSel.value) {
-      const res = await fetch(`/api/catalog/items?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}&sub_category=${encodeURIComponent(subSel.value)}`);
-      const list = await res.json();
-      list.forEach(i => itemSel.innerHTML += `<option value="${i.item_name}" data-code="${i.item_code}" data-color="${i.color_ko}">${i.item_name}</option>`);
-    }
-  }
-}
-document.getElementById('mainCategorySelect').addEventListener('change', ()=>handleCatalogChange('main'));
-document.getElementById('brandNameSelect').addEventListener('change', ()=>handleCatalogChange('brand'));
-document.getElementById('subCategorySelect').addEventListener('change', ()=>handleCatalogChange('sub'));
-document.getElementById('itemNameSelect').addEventListener('change', async function() {
-  const itemName = this.value;
-  const colorSel = document.getElementById('colorSelect');
-  colorSel.innerHTML = '<option value="">색상 선택</option>';
-  if(itemName) {
-    const res = await fetch('/api/catalog/colors?item_name=' + encodeURIComponent(itemName));
-    const list = await res.json();
-    list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
-  }
-});
-window.addEventListener('DOMContentLoaded', loadCatalog);
-
-// 제품명/제품코드 검색형 자동완성
-const productSearchInput = document.getElementById('productSearchInput');
-const productSearchList = document.getElementById('productSearchList');
-productSearchInput.addEventListener('input', async function() {
-  const q = this.value.trim();
-  if(q.length < 2) { productSearchList.innerHTML = ''; return; }
-  const res = await fetch('/api/catalog/search-items?query=' + encodeURIComponent(q));
-  const list = await res.json();
-  if(list.length === 0) { productSearchList.innerHTML = '<div style="background:#fff;border:1px solid #aaa;">검색 결과 없음</div>'; return; }
-  productSearchList.innerHTML = list.map(i => `<div style='background:#fff;border:1px solid #aaa;cursor:pointer;padding:2px;' onclick='selectProductFromSearch(${JSON.stringify(i)})'>${i.item_name} (${i.item_code}) - ${i.brand_name} / ${i.main_category} / ${i.sub_category}</div>`).join('');
-});
-function selectProductFromSearch(item) {
-  // 드롭다운 값 자동 세팅
-  document.getElementById('mainCategorySelect').value = item.main_category;
-  handleCatalogChange('main').then(()=>{
-    document.getElementById('subCategorySelect').value = item.sub_category;
-    handleCatalogChange('sub').then(()=>{
-      document.getElementById('brandNameSelect').value = item.brand_name;
-      handleCatalogChange('brand').then(()=>{
-        document.getElementById('itemNameSelect').value = item.item_name;
-        // itemName 드롭다운 값이 실제로 선택되도록 보장
-        // 상세정보 자동입력
-        document.getElementById('itemCodeInput').value = item.item_code;
-        // 색상 드롭다운도 자동 세팅
-        const colorSel = document.getElementById('colorSelect');
-        colorSel.innerHTML = '<option value="">색상 선택</option>';
-        fetch('/api/catalog/colors?item_name=' + encodeURIComponent(item.item_name)).then(r=>r.json()).then(list=>{
-          list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
-        });
-        productSearchList.innerHTML = '';
-        productSearchInput.value = item.item_name + ' (' + item.item_code + ')';
+    // 탭 전환 (애니메이션 포함)
+    function showTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('fade-enter-active');
       });
+      document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('bg-blue-100', 'text-blue-700', 'font-bold'));
+      const target = document.getElementById(tab);
+      if(target) {
+        target.classList.remove('hidden');
+        setTimeout(()=>target.classList.add('fade-enter-active'), 10);
+      }
+      // 활성화 메뉴 스타일
+      const navs = document.querySelectorAll('.nav-link');
+      navs.forEach(link => {
+        if(link.getAttribute('onclick') === `showTab('${tab}')`) {
+          link.classList.add('bg-blue-100', 'text-blue-700', 'font-bold');
+        }
+      });
+      if(tab === 'orderList') loadOrders();
+      if(tab === 'purchaseList') loadPurchases();
+      if(tab === 'designList') loadDesigns();
+      if(tab === 'printList') loadPrints();
+    }
+    // 주문 등록
+    async function submitOrder() {
+      const form = document.querySelector('#orderForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      // itemName 값이 비어있으면 드롭다운에서 강제로 할당
+      if (!data.itemName) {
+        const itemNameSelect = document.getElementById('itemNameSelect');
+        data.itemName = itemNameSelect.value;
+      }
+      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
+      const res = await fetch('/api/orders', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('등록 완료: ' + JSON.stringify(json));
+      form.reset();
+    }
+    // 주문 조회
+    async function loadOrders() {
+      const res = await fetch('/api/orders');
+      const orders = await res.json();
+      // 발주 리스트도 불러오기
+      const pres = await fetch('/api/purchases');
+      const purchases = await pres.json();
+      const tbody = document.querySelector('#orderTable tbody');
+      tbody.innerHTML = '';
+      orders.forEach((o, idx) => {
+        // 주문에 해당하는 발주 찾기
+        const purchase = purchases.find(p => p.orderId === o.orderId);
+        const purchaseStatus = purchase ? purchase.purchaseStatus : '없음';
+        tbody.innerHTML += `
+          <tr>
+            <td>${o.orderId}</td>
+            <td><input value="${o.groupName}" onchange="editOrder('${o.orderId}', 'groupName', this.value)"></td>
+            <td><input value="${o.itemName}" onchange="editOrder('${o.orderId}', 'itemName', this.value)"></td>
+            <td>${o.totalQuantity}</td>
+            <td><input value="${o.totalPrice}" onchange="editOrder('${o.orderId}', 'totalPrice', this.value)"></td>
+            <td>${purchaseStatus}</td>
+            <td><button onclick="saveOrder('${o.orderId}')">저장</button></td>
+            <td><button onclick="deleteOrder('${o.orderId}')">삭제</button></td>
+            <td><button onclick="toggleOrderDetail(${idx})">상세보기</button></td>
+          </tr>
+          <tr class="order-detail-row" id="order-detail-${idx}" style="display:none;">
+            <td colspan="9">
+              <div>
+                <b>주문번호:</b> ${o.orderId} <b>대표자명:</b> ${o.representativeName} <b>연락처:</b> ${o.representativePhone}<br>
+                <b>품명:</b> ${o.itemName} <b>색상:</b> ${o.color}<br>
+                <b>사이즈별 수량:</b> 110: ${o.size_110} / 120: ${o.size_120} / 130: ${o.size_130} / 140: ${o.size_140} / 150: ${o.size_150} / 160: ${o.size_160} / XS: ${o.size_XS} / S: ${o.size_S} / M: ${o.size_M} / L: ${o.size_L} / XL: ${o.size_XL} / 2XL: ${o.size_2XL} / 3XL: ${o.size_3XL} / 4XL: ${o.size_4XL} / 5XL: ${o.size_5XL} / LL: ${o.size_LL} / 3L: ${o.size_3L} / 4L: ${o.size_4L} / 5L: ${o.size_5L} / free: ${o.size_free} / custom: ${o.size_custom}<br>
+                <b>총수량:</b> ${o.totalQuantity} <b>금액:</b> ${o.totalPrice}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    function toggleOrderDetail(idx) {
+      const row = document.getElementById('order-detail-' + idx);
+      row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+    async function deleteOrder(orderId) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/orders/' + orderId, { method: 'DELETE' });
+        loadOrders();
+      }
+    }
+    // 수정/저장용 임시 객체
+    const orderEdits = {};
+    function editOrder(orderId, field, value) {
+      if(!orderEdits[orderId]) orderEdits[orderId] = {};
+      orderEdits[orderId][field] = value;
+    }
+    async function saveOrder(orderId) {
+      await fetch('/api/orders/' + orderId, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(orderEdits[orderId])
+      });
+      alert('저장 완료');
+      loadOrders();
+    }
+    const purchaseEdits = {};
+    function editPurchase(purchaseNumber, field, value) {
+      if(!purchaseEdits[purchaseNumber]) purchaseEdits[purchaseNumber] = {};
+      purchaseEdits[purchaseNumber][field] = value;
+    }
+    async function savePurchase(purchaseNumber) {
+      await fetch('/api/purchases/' + purchaseNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(purchaseEdits[purchaseNumber])
+      });
+      alert('저장 완료');
+      loadPurchases();
+    }
+    // 발주 조회
+    async function loadPurchases() {
+      const res = await fetch('/api/purchases');
+      const list = await res.json();
+      const tbody = document.querySelector('#purchaseTable tbody');
+      tbody.innerHTML = '';
+      list.forEach((p, idx) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.orderId}</td>
+            <td>${p.groupName || ''}</td>
+            <td><input value="${p.managerName || ''}" onchange="editPurchase('${p.purchaseNumber}', 'managerName', this.value)"></td>
+            <td>${p.purchaseNumber}</td>
+            <td><input value="${p.color || ''}" onchange="editPurchase('${p.purchaseNumber}', 'color', this.value)"></td>
+            <td>${p.totalQuantity}</td>
+            <td>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주전')">발주전</button>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주신청')">발주신청</button>
+              <button onclick="setStatus('${p.purchaseNumber}', '발주완료')">발주완료</button>
+              (${p.purchaseStatus})
+            </td>
+            <td><button onclick="savePurchase('${p.purchaseNumber}')">저장</button></td>
+            <td><button onclick="deletePurchase('${p.purchaseNumber}')">삭제</button></td>
+            <td><button onclick="togglePurchaseDetail(${idx})">상세보기</button></td>
+          </tr>
+          <tr class="purchase-detail-row" id="purchase-detail-${idx}" style="display:none;">
+            <td colspan="10">
+              <div>
+                <b>발주번호:</b> ${p.purchaseNumber} <b>주문번호:</b> ${p.orderId}<br>
+                <b>제품명:</b> ${p.itemName || ''} <b>제품코드:</b> ${p.itemCode || ''} <b>색상:</b> ${p.color || ''}<br>
+                <b>사이즈별 수량:</b> 110: ${p.size_110} / 120: ${p.size_120} / 130: ${p.size_130} / 140: ${p.size_140} / 150: ${p.size_150} / 160: ${p.size_160} / XS: ${p.size_XS} / S: ${p.size_S} / M: ${p.size_M} / L: ${p.size_L} / XL: ${p.size_XL} / 2XL: ${p.size_2XL} / 3XL: ${p.size_3XL} / 4XL: ${p.size_4XL} / 5XL: ${p.size_5XL} / LL: ${p.size_LL} / 3L: ${p.size_3L} / 4L: ${p.size_4L} / 5L: ${p.size_5L} / free: ${p.size_free} / custom: ${p.size_custom}<br>
+                <b>총발주수량:</b> ${p.totalQuantity} <b>총금액:</b> ${p.totalPurchasePrice}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    function togglePurchaseDetail(idx) {
+      const row = document.getElementById('purchase-detail-' + idx);
+      row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+    async function deletePurchase(purchaseNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/purchases/' + purchaseNumber, { method: 'DELETE' });
+        loadPurchases();
+      }
+    }
+    function setStatus(purchaseNumber, status) {
+      editPurchase(purchaseNumber, 'purchaseStatus', status);
+      savePurchase(purchaseNumber);
+    }
+    // 디자인 등록
+    async function submitDesign() {
+      const form = document.querySelector('#designForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.title) {
+        alert('제목은 필수입니다.');
+        return;
+      }
+      if (!data.status) delete data.status; // 기본값 사용
+      if (!data.orderId) data.orderId = null; // 빈 값은 null로
+      const res = await fetch('/api/designs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('디자인 등록 완료: ' + json.designNumber);
+      form.reset();
+      loadDesigns();
+    }
+    // 디자인 전체 조회 및 테이블 렌더링
+    async function loadDesigns() {
+      // 주문번호 리스트 불러오기
+      const orderRes = await fetch('/api/orders');
+      const orderList = await orderRes.json();
+      // 등록 폼 드롭다운 세팅
+      const orderSelect = document.getElementById('designOrderSelect');
+      orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
+      orderList.forEach(order => {
+        orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+      });
+      // 디자인 목록 불러오기
+      const res = await fetch('/api/designs');
+      const list = await res.json();
+      if (!Array.isArray(list)) {
+        alert('디자인 목록을 불러오지 못했습니다: ' + (list.error || JSON.stringify(list)));
+        return;
+      }
+      const tbody = document.querySelector('#designTable tbody');
+      tbody.innerHTML = '';
+      list.forEach(d => {
+        // 각 행별 주문번호 드롭다운 생성
+        let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
+        orderList.forEach(order => {
+          orderOptions += `<option value="${order.orderId}" ${d.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+        });
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.designNumber}</td>
+            <td><select onchange="editDesign('${d.designNumber}', 'orderId', this.value)">${orderOptions}</select></td>
+            <td><input value="${d.title||''}" onchange="editDesign('${d.designNumber}', 'title', this.value)"></td>
+            <td><input value="${d.description||''}" onchange="editDesign('${d.designNumber}', 'description', this.value)"></td>
+            <td><input value="${d.driveLink||''}" onchange="editDesign('${d.designNumber}', 'driveLink', this.value)"></td>
+            <td>
+              <select onchange="editDesign('${d.designNumber}', 'status', this.value)">
+                <option value="착수전" ${d.status==='착수전'?'selected':''}>착수전</option>
+                <option value="요청됨" ${d.status==='요청됨'?'selected':''}>요청됨</option>
+                <option value="진행중" ${d.status==='진행중'?'selected':''}>진행중</option>
+                <option value="수정요청" ${d.status==='수정요청'?'selected':''}>수정요청</option>
+                <option value="작업완료" ${d.status==='작업완료'?'selected':''}>작업완료</option>
+                <option value="확정" ${d.status==='확정'?'selected':''}>확정</option>
+              </select>
+            </td>
+            <td><input value="${d.createdBy||''}" onchange="editDesign('${d.designNumber}', 'createdBy', this.value)"></td>
+            <td>${d.createdAt ? d.createdAt.slice(0,19).replace('T',' ') : ''}</td>
+            <td><button onclick="saveDesign('${d.designNumber}')">저장</button></td>
+            <td><button onclick="deleteDesign('${d.designNumber}')">삭제</button></td>
+          </tr>
+        `;
+      });
+    }
+    // 디자인 수정/저장용 임시 객체
+    const designEdits = {};
+    function editDesign(designNumber, field, value) {
+      if(!designEdits[designNumber]) designEdits[designNumber] = {};
+      designEdits[designNumber][field] = value || null;
+    }
+    async function saveDesign(designNumber) {
+      await fetch('/api/designs/' + designNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(designEdits[designNumber])
+      });
+      alert('저장 완료');
+      loadDesigns();
+    }
+    // 디자인 삭제
+    async function deleteDesign(designNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/designs/' + designNumber, { method: 'DELETE' });
+        loadDesigns();
+      }
+    }
+    // 인쇄 등록
+    async function submitPrint() {
+      const form = document.querySelector('#printForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (!data.printMethod || !data.factoryName) {
+        alert('인쇄방식, 인쇄소명은 필수입니다.');
+        return;
+      }
+      if (!data.orderId) data.orderId = null;
+      const res = await fetch('/api/prints', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      alert('인쇄 등록 완료: ' + json.printNumber);
+      form.reset();
+      loadPrints();
+    }
+    // 인쇄 전체 조회 및 테이블 렌더링
+    async function loadPrints() {
+      // 주문번호 리스트 불러오기
+      const orderRes = await fetch('/api/orders');
+      const orderList = await orderRes.json();
+      // 등록 폼 드롭다운 세팅
+      const orderSelect = document.getElementById('printOrderSelect');
+      orderSelect.innerHTML = '<option value="">주문번호 선택 (선택사항)</option>';
+      orderList.forEach(order => {
+        orderSelect.innerHTML += `<option value="${order.orderId}">${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+      });
+      // 인쇄 목록 불러오기
+      const res = await fetch('/api/prints');
+      const list = await res.json();
+      const tbody = document.querySelector('#printTable tbody');
+      tbody.innerHTML = '';
+      list.forEach(p => {
+        let orderOptions = '<option value="">주문번호 선택 (선택사항)</option>';
+        orderList.forEach(order => {
+          orderOptions += `<option value="${order.orderId}" ${p.orderId===order.orderId?'selected':''}>${order.orderId} - ${order.groupName} - ${order.itemName}</option>`;
+        });
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.printNumber}</td>
+            <td><select onchange="editPrint('${p.printNumber}', 'orderId', this.value)">${orderOptions}</select></td>
+            <td><input value="${p.printMethod||''}" onchange="editPrint('${p.printNumber}', 'printMethod', this.value)"></td>
+            <td><input value="${p.factoryName||''}" onchange="editPrint('${p.printNumber}', 'factoryName', this.value)"></td>
+            <td><input type="date" value="${p.expectedDate||''}" onchange="editPrint('${p.printNumber}', 'expectedDate', this.value)"></td>
+            <td>
+              <select onchange="editPrint('${p.printNumber}', 'status', this.value)">
+                <option value="발주전" ${p.status==='발주전'?'selected':''}>발주전</option>
+                <option value="발주요청" ${p.status==='발주요청'?'selected':''}>발주요청</option>
+                <option value="발주완료" ${p.status==='발주완료'?'selected':''}>발주완료</option>
+                <option value="작업완료" ${p.status==='작업완료'?'selected':''}>작업완료</option>
+              </select>
+            </td>
+            <td><button onclick="savePrint('${p.printNumber}')">저장</button></td>
+            <td><button onclick="deletePrint('${p.printNumber}')">삭제</button></td>
+          </tr>
+        `;
+      });
+    }
+    // 인쇄 수정/저장용 임시 객체
+    const printEdits = {};
+    function editPrint(printNumber, field, value) {
+      if(!printEdits[printNumber]) printEdits[printNumber] = {};
+      printEdits[printNumber][field] = value || null;
+    }
+    async function savePrint(printNumber) {
+      await fetch('/api/prints/' + printNumber, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(printEdits[printNumber])
+      });
+      alert('저장 완료');
+      loadPrints();
+    }
+    async function deletePrint(printNumber) {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        await fetch('/api/prints/' + printNumber, { method: 'DELETE' });
+        loadPrints();
+      }
+    }
+    // 카탈로그 드롭다운 연동
+    async function loadCatalog() {
+      // 대분류
+      const mainRes = await fetch('/api/catalog/main-categories');
+      const mainList = await mainRes.json();
+      const mainSel = document.getElementById('mainCategorySelect');
+      mainSel.innerHTML = '<option value="">대분류 선택</option>';
+      mainList.forEach(m => mainSel.innerHTML += `<option value="${m}">${m}</option>`);
+    }
+    async function handleCatalogChange(level) {
+      const mainSel = document.getElementById('mainCategorySelect');
+      const brandSel = document.getElementById('brandNameSelect');
+      const subSel = document.getElementById('subCategorySelect');
+      const itemSel = document.getElementById('itemNameSelect');
+      if(level==='main') {
+        brandSel.innerHTML = '<option value="">브랜드 선택</option>';
+        subSel.innerHTML = '<option value="">소분류 선택</option>';
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value) {
+          const res = await fetch(`/api/catalog/brands?main_category=${encodeURIComponent(mainSel.value)}`);
+          const list = await res.json();
+          list.forEach(b => brandSel.innerHTML += `<option value="${b}">${b}</option>`);
+        }
+      }
+      if(level==='brand') {
+        subSel.innerHTML = '<option value="">소분류 선택</option>';
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value && brandSel.value) {
+          const res = await fetch(`/api/catalog/sub-categories?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}`);
+          const list = await res.json();
+          list.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
+        }
+      }
+      if(level==='sub') {
+        itemSel.innerHTML = '<option value="">제품명 선택</option>';
+        if(mainSel.value && brandSel.value && subSel.value) {
+          const res = await fetch(`/api/catalog/items?main_category=${encodeURIComponent(mainSel.value)}&brand_name=${encodeURIComponent(brandSel.value)}&sub_category=${encodeURIComponent(subSel.value)}`);
+          const list = await res.json();
+          list.forEach(i => itemSel.innerHTML += `<option value="${i.item_name}" data-code="${i.item_code}" data-color="${i.color_ko}">${i.item_name}</option>`);
+        }
+      }
+    }
+    document.getElementById('mainCategorySelect').addEventListener('change', ()=>handleCatalogChange('main'));
+    document.getElementById('brandNameSelect').addEventListener('change', ()=>handleCatalogChange('brand'));
+    document.getElementById('subCategorySelect').addEventListener('change', ()=>handleCatalogChange('sub'));
+    document.getElementById('itemNameSelect').addEventListener('change', async function() {
+      const itemName = this.value;
+      const colorSel = document.getElementById('colorSelect');
+      colorSel.innerHTML = '<option value="">색상 선택</option>';
+      if(itemName) {
+        const res = await fetch('/api/catalog/colors?item_name=' + encodeURIComponent(itemName));
+        const list = await res.json();
+        list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
+      }
     });
-  });
-}
-// ... 기존 <script> 코드 끝 ...
+    window.addEventListener('DOMContentLoaded', loadCatalog);
+    // 제품명/제품코드 검색형 자동완성
+    const productSearchInput = document.getElementById('productSearchInput');
+    const productSearchList = document.getElementById('productSearchList');
+    productSearchInput.addEventListener('input', async function() {
+      const q = this.value.trim();
+      if(q.length < 2) { productSearchList.innerHTML = ''; return; }
+      const res = await fetch('/api/catalog/search-items?query=' + encodeURIComponent(q));
+      const list = await res.json();
+      if(list.length === 0) { productSearchList.innerHTML = '<div style="background:#fff;border:1px solid #aaa;">검색 결과 없음</div>'; return; }
+      productSearchList.innerHTML = list.map(i => `<div style='background:#fff;border:1px solid #aaa;cursor:pointer;padding:2px;' onclick='selectProductFromSearch(${JSON.stringify(i)})'>${i.item_name} (${i.item_code}) - ${i.brand_name} / ${i.main_category} / ${i.sub_category}</div>`).join('');
+    });
+    function selectProductFromSearch(item) {
+      // 드롭다운 값 자동 세팅
+      document.getElementById('mainCategorySelect').value = item.main_category;
+      handleCatalogChange('main').then(()=>{
+        document.getElementById('subCategorySelect').value = item.sub_category;
+        handleCatalogChange('sub').then(()=>{
+          document.getElementById('brandNameSelect').value = item.brand_name;
+          handleCatalogChange('brand').then(()=>{
+            document.getElementById('itemNameSelect').value = item.item_name;
+            // itemName 드롭다운 값이 실제로 선택되도록 보장
+            // 상세정보 자동입력
+            document.getElementById('itemCodeInput').value = item.item_code;
+            // 색상 드롭다운도 자동 세팅
+            const colorSel = document.getElementById('colorSelect');
+            colorSel.innerHTML = '<option value="">색상 선택</option>';
+            fetch('/api/catalog/colors?item_name=' + encodeURIComponent(item.item_name)).then(r=>r.json()).then(list=>{
+              list.forEach(c => colorSel.innerHTML += `<option value="${c}" ${c===item.color_ko?'selected':''}>${c}</option>`);
+            });
+            productSearchList.innerHTML = '';
+            productSearchInput.value = item.item_name + ' (' + item.item_code + ')';
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html>
