@@ -194,7 +194,10 @@
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-700 mb-2">금액 정보</h3>
-                <input name="totalPrice" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="총금액">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input name="orderDate" type="date" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="주문날짜">
+                  <input name="totalPrice" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="총금액">
+                </div>
               </div>
               <div class="flex gap-3 mt-6">
                 <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-5 py-2 transition shadow flex items-center gap-2" onclick="submitOrder()">
@@ -503,19 +506,31 @@
     async function submitOrder() {
       const form = document.querySelector('#orderForm');
       const data = Object.fromEntries(new FormData(form).entries());
+      
       // itemName 값이 비어있으면 드롭다운에서 강제로 할당
       if (!data.itemName) {
         const itemNameSelect = document.getElementById('itemNameSelect');
         data.itemName = itemNameSelect.value;
       }
+
+      // 주문날짜가 없으면 오늘 날짜(KST)를 기본값으로 설정
+      if (!data.orderDate) {
+        const now = new Date();
+        const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // KST로 변환
+        data.orderDate = kstDate.toISOString().split('T')[0];
+      }
+
       ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
+      
       const res = await fetch('/api/orders', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
       });
       const json = await res.json();
       alert('등록 완료: ' + JSON.stringify(json));
       form.reset();
+      loadOrders();
     }
     // 주문 조회
     async function loadOrders() {
