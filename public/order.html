@@ -1029,7 +1029,8 @@
     // 현재 날짜/시각 표시 함수
     function updateDateTime() {
       const now = new Date();
-      const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // KST로 변환
+      // KST로 정확하게 변환 (UTC+9)
+      const kstDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
       const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
       const year = kstDate.getFullYear();
       const month = String(kstDate.getMonth() + 1).padStart(2, '0');
@@ -1049,9 +1050,9 @@
       updateDateTime();
       setInterval(updateDateTime, 1000);
       
-      // 주문날짜 기본값 설정
+      // 주문날짜 기본값 설정 (KST)
       const now = new Date();
-      const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      const kstDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
       const today = kstDate.toISOString().split('T')[0];
       document.getElementById('orderDateInput').value = today;
     });
