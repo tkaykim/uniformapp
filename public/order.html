@@ -61,12 +61,21 @@
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-30 z-30 hidden md:hidden"></div>
     <!-- 메인 콘텐츠 -->
     <main class="flex-1 md:ml-5 p-4 md:p-8 transition-all duration-300 w-full ml-0">
+      <!-- 현재 날짜/시각 표시 -->
+      <div class="text-right mb-4 text-gray-600" id="currentDateTime"></div>
+      
       <!-- 주문 등록 -->
       <div id="order" class="tab-content fade-enter-active">
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-800 mb-4">주문 등록</h1>
           <div class="bg-white rounded-2xl shadow-lg p-6">
             <form id="orderForm" class="space-y-6">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">주문 정보</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input name="orderDate" type="date" id="orderDateInput" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="주문날짜">
+                </div>
+              </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-700 mb-2">단체 정보</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,7 +204,6 @@
               <div>
                 <h3 class="text-lg font-semibold text-gray-700 mb-2">금액 정보</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input name="orderDate" type="date" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="주문날짜">
                   <input name="totalPrice" class="form-control block w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-base focus:border-blue-500 focus:ring focus:ring-blue-100 transition" placeholder="총금액">
                 </div>
               </div>
@@ -1017,6 +1025,36 @@
       form.reset();
       loadPurchases();
     }
+
+    // 현재 날짜/시각 표시 함수
+    function updateDateTime() {
+      const now = new Date();
+      const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // KST로 변환
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      const year = kstDate.getFullYear();
+      const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+      const day = String(kstDate.getDate()).padStart(2, '0');
+      const weekday = weekdays[kstDate.getDay()];
+      const hours = kstDate.getHours();
+      const minutes = String(kstDate.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      
+      document.getElementById('currentDateTime').textContent = 
+        `${year}년 ${month}월 ${day}일 ${weekday}요일 ${ampm} ${displayHours}:${minutes}`;
+    }
+
+    // 페이지 로드 시 현재 날짜/시각 표시 및 1초마다 업데이트
+    window.addEventListener('DOMContentLoaded', () => {
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      
+      // 주문날짜 기본값 설정
+      const now = new Date();
+      const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      const today = kstDate.toISOString().split('T')[0];
+      document.getElementById('orderDateInput').value = today;
+    });
   </script>
 </body>
 </html>
