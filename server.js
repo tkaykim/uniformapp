@@ -24,6 +24,8 @@ app.post('/api/orders', (req, res) => {
     const now = new Date().toISOString();
     const sizes = ["size_110", "size_120", "size_130", "size_140", "size_150", "size_160", "size_XS", "size_SS", "size_S", "size_M", "size_L", "size_XL", "size_2XL", "size_3XL", "size_4XL", "size_5XL", "size_LL", "size_3L", "size_4L", "size_5L", "size_free", "size_custom"];
     const sizeVals = sizes.map(s => parseInt(o[s]) || 0);
+    
+    // evOrder에만 저장
     db.run(
         `INSERT INTO evOrder (
             orderId, groupName, representativeName, representativePhone, managerName,
