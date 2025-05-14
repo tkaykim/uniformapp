@@ -284,4 +284,6 @@ app.get('/api/catalog/colors', (req, res) => {
   );
 });
 
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+// === 서버 시작 ===
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
