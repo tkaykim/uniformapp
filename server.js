@@ -59,6 +59,14 @@ app.get('/api/orders', (req, res) => {
   });
 });
 
+app.get('/api/orders/:orderId', (req, res) => {
+  db.get('SELECT * FROM evOrder WHERE orderId = ?', [req.params.orderId], (err, row) => {
+    if (err) return res.status(500).json({error: err.message});
+    if (!row) return res.status(404).json({error: '주문을 찾을 수 없습니다.'});
+    res.json(row);
+  });
+});
+
 app.put('/api/orders/:orderId', (req, res) => {
   const fields = Object.keys(req.body).map(k => `${k}=?`).join(',');
   const values = Object.values(req.body);
@@ -70,14 +78,23 @@ app.put('/api/orders/:orderId', (req, res) => {
 });
 
 app.get('/api/purchases', (req, res) => {
-  db.all(`
+  const orderId = req.query.orderId;
+  let query = `
     SELECT 
       p.*, 
       o.groupName, 
       o.managerName
     FROM evPurchase p
     LEFT JOIN evOrder o ON p.orderId = o.orderId
-  `, (err, rows) => {
+  `;
+  const params = [];
+  
+  if (orderId) {
+    query += ' WHERE p.orderId = ?';
+    params.push(orderId);
+  }
+  
+  db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({error: err.message});
     res.json(rows);
   });
