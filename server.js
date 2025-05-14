@@ -74,20 +74,20 @@ app.get('/api/purchases', (req, res) => {
 });
 
 app.post('/api/purchases', (req, res) => {
-  const { orderId, groupName, itemName, itemCode, color, managerName, purchaseStatus, size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom } = req.body;
+  const { orderId, itemName, brandName, itemCode, color, size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom, totalPurchasePrice, purchaseStatus } = req.body;
   
   // 주문번호가 있는 경우
   if (orderId) {
-    // 먼저 evPurchase에서 해당 주문번호의 데이터가 있는지 확인
+    // 1. 먼저 evPurchase에서 해당 주문번호의 데이터가 있는지 확인
     db.get('SELECT * FROM evPurchase WHERE orderId = ?', [orderId], (err, existingPurchase) => {
       if (err) {
         console.error('발주 정보 조회 중 오류:', err);
         return res.status(500).json({ error: err.message });
       }
 
-      // evPurchase에 데이터가 있으면 그 데이터를 사용, 없으면 evOrder에서 조회
+      // 2. evPurchase에 데이터가 있는 경우
       if (existingPurchase) {
-        // 기존 발주 데이터를 기본값으로 사용
+        // 기존 발주 데이터를 기본값으로 사용하고 업데이트
         const purchaseNumber = existingPurchase.purchaseNumber;
         const sql = `UPDATE evPurchase SET 
           itemName = ?,
@@ -122,7 +122,7 @@ app.post('/api/purchases', (req, res) => {
 
         db.run(sql, [
           itemName || existingPurchase.itemName,
-          existingPurchase.brandName,
+          brandName || existingPurchase.brandName,
           itemCode || existingPurchase.itemCode,
           color || existingPurchase.color,
           size_110 || existingPurchase.size_110,
@@ -147,7 +147,7 @@ app.post('/api/purchases', (req, res) => {
           size_5L || existingPurchase.size_5L,
           size_free || existingPurchase.size_free,
           size_custom || existingPurchase.size_custom,
-          existingPurchase.totalPurchasePrice,
+          totalPurchasePrice || existingPurchase.totalPurchasePrice,
           purchaseStatus || existingPurchase.purchaseStatus,
           purchaseNumber
         ], function(err) {
@@ -158,7 +158,7 @@ app.post('/api/purchases', (req, res) => {
           res.json({ purchaseNumber });
         });
       } else {
-        // evPurchase에 데이터가 없으면 evOrder에서 조회
+        // 3. evPurchase에 데이터가 없는 경우 evOrder에서 조회
         db.get('SELECT * FROM evOrder WHERE orderId = ?', [orderId], (err, order) => {
           if (err) {
             console.error('주문 정보 조회 중 오류:', err);
@@ -184,17 +184,35 @@ app.post('/api/purchases', (req, res) => {
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
           db.run(sql, [
-            orderId, purchaseNumber, itemName || order.itemName, order.brandName, 
-            itemCode || order.itemCode, color || order.color,
-            size_110 || order.size_110, size_120 || order.size_120, size_130 || order.size_130,
-            size_140 || order.size_140, size_150 || order.size_150, size_160 || order.size_160,
-            size_XS || order.size_XS, size_SS || order.size_SS, size_S || order.size_S,
-            size_M || order.size_M, size_L || order.size_L, size_XL || order.size_XL,
-            size_2XL || order.size_2XL, size_3XL || order.size_3XL, size_4XL || order.size_4XL,
-            size_5XL || order.size_5XL, size_LL || order.size_LL, size_3L || order.size_3L,
-            size_4L || order.size_4L, size_5L || order.size_5L,
-            size_free || order.size_free, size_custom || order.size_custom,
-            order.totalPrice, purchaseStatus || '발주전'
+            orderId, purchaseNumber, 
+            itemName || order.itemName, 
+            brandName || order.brandName, 
+            itemCode || order.itemCode, 
+            color || order.color,
+            size_110 || order.size_110, 
+            size_120 || order.size_120, 
+            size_130 || order.size_130,
+            size_140 || order.size_140, 
+            size_150 || order.size_150, 
+            size_160 || order.size_160,
+            size_XS || order.size_XS, 
+            size_SS || order.size_SS, 
+            size_S || order.size_S,
+            size_M || order.size_M, 
+            size_L || order.size_L, 
+            size_XL || order.size_XL,
+            size_2XL || order.size_2XL, 
+            size_3XL || order.size_3XL, 
+            size_4XL || order.size_4XL,
+            size_5XL || order.size_5XL, 
+            size_LL || order.size_LL, 
+            size_3L || order.size_3L,
+            size_4L || order.size_4L, 
+            size_5L || order.size_5L,
+            size_free || order.size_free, 
+            size_custom || order.size_custom,
+            totalPurchasePrice || order.totalPrice, 
+            purchaseStatus || '발주전'
           ], function(err) {
             if (err) {
               console.error('발주 등록 중 오류:', err);
@@ -206,27 +224,27 @@ app.post('/api/purchases', (req, res) => {
       }
     });
   } else {
-    // 주문번호가 없는 경우 (독립적인 발주 등록)
+    // 4. 주문번호 없이 독립적으로 발주 등록
     const purchaseNumber = 'P' + Date.now();
     
     const sql = `INSERT INTO evPurchase (
-      purchaseNumber, orderId, itemName, brandName, itemCode, color,
+      purchaseNumber, itemName, brandName, itemCode, color,
       size_110, size_120, size_130, size_140, size_150, size_160,
       size_XS, size_SS, size_S, size_M, size_L, size_XL,
       size_2XL, size_3XL, size_4XL, size_5XL,
       size_LL, size_3L, size_4L, size_5L,
       size_free, size_custom,
       totalPurchasePrice, purchaseStatus
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.run(sql, [
-      purchaseNumber, null, itemName, null, itemCode, color,
+      purchaseNumber, itemName, brandName, itemCode, color,
       size_110, size_120, size_130, size_140, size_150, size_160,
       size_XS, size_SS, size_S, size_M, size_L, size_XL,
       size_2XL, size_3XL, size_4XL, size_5XL,
       size_LL, size_3L, size_4L, size_5L,
       size_free, size_custom,
-      0, purchaseStatus || '발주전'
+      totalPurchasePrice, purchaseStatus || '발주전'
     ], function(err) {
       if (err) {
         console.error('발주 등록 중 오류:', err);
