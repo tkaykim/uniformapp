@@ -22,13 +22,13 @@ app.post('/api/orders', (req, res) => {
     const o = req.body;
     const orderId = new Date().toISOString().slice(0,10).replace(/-/g, '') + Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     const now = new Date().toISOString();
-    const sizes = ["size_110", "size_120", "size_130", "size_140", "size_150", "size_160", "size_XS", "size_S", "size_M", "size_L", "size_XL", "size_2XL", "size_3XL", "size_4XL", "size_5XL", "size_LL", "size_3L", "size_4L", "size_5L", "size_free", "size_custom"];
+    const sizes = ["size_110", "size_120", "size_130", "size_140", "size_150", "size_160", "size_XS", "size_SS", "size_S", "size_M", "size_L", "size_XL", "size_2XL", "size_3XL", "size_4XL", "size_5XL", "size_LL", "size_3L", "size_4L", "size_5L", "size_free", "size_custom"];
     const sizeVals = sizes.map(s => parseInt(o[s]) || 0);
     db.run(
         `INSERT INTO evOrder (
             orderId, groupName, representativeName, representativePhone, managerName,
             mainCategory, subCategory, itemName, brandName, itemCode, color,
-            totalPrice, size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom
+            totalPrice, size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [orderId, o.groupName, o.representativeName, o.representativePhone, o.managerName,
          o.mainCategory, o.subCategory, o.itemName, o.brandName, o.itemCode, o.color,
@@ -39,7 +39,7 @@ app.post('/api/orders', (req, res) => {
             db.run(
                 `INSERT INTO evPurchase (
                     orderId, purchaseNumber, itemName, brandName, itemCode, color,
-                    size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom, totalPurchasePrice, purchaseStatus
+                    size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom, totalPurchasePrice, purchaseStatus
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [orderId, purchaseNumber, o.itemName, o.brandName, o.itemCode, o.color,
                  ...sizeVals, o.totalPrice, '발주전'],
@@ -284,6 +284,4 @@ app.get('/api/catalog/colors', (req, res) => {
   );
 });
 
-// === 서버 시작 ===
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
