@@ -1025,7 +1025,6 @@
     document.getElementById('purchaseOrderSelect').addEventListener('change', async function() {
       const orderId = this.value;
       if (!orderId) {
-        // 주문번호가 선택되지 않은 경우 폼 초기화
         document.querySelector('#purchaseForm').reset();
         return;
       }
@@ -1044,28 +1043,13 @@
         document.querySelector('input[name="managerName"]').value = purchase.managerName || '';
         
         // 사이즈별 수량 자동 채우기
-        document.querySelector('input[name="size_110"]').value = purchase.size_110 || '';
-        document.querySelector('input[name="size_120"]').value = purchase.size_120 || '';
-        document.querySelector('input[name="size_130"]').value = purchase.size_130 || '';
-        document.querySelector('input[name="size_140"]').value = purchase.size_140 || '';
-        document.querySelector('input[name="size_150"]').value = purchase.size_150 || '';
-        document.querySelector('input[name="size_160"]').value = purchase.size_160 || '';
-        document.querySelector('input[name="size_XS"]').value = purchase.size_XS || '';
-        document.querySelector('input[name="size_SS"]').value = purchase.size_SS || '';
-        document.querySelector('input[name="size_S"]').value = purchase.size_S || '';
-        document.querySelector('input[name="size_M"]').value = purchase.size_M || '';
-        document.querySelector('input[name="size_L"]').value = purchase.size_L || '';
-        document.querySelector('input[name="size_XL"]').value = purchase.size_XL || '';
-        document.querySelector('input[name="size_2XL"]').value = purchase.size_2XL || '';
-        document.querySelector('input[name="size_3XL"]').value = purchase.size_3XL || '';
-        document.querySelector('input[name="size_4XL"]').value = purchase.size_4XL || '';
-        document.querySelector('input[name="size_5XL"]').value = purchase.size_5XL || '';
-        document.querySelector('input[name="size_LL"]').value = purchase.size_LL || '';
-        document.querySelector('input[name="size_3L"]').value = purchase.size_3L || '';
-        document.querySelector('input[name="size_4L"]').value = purchase.size_4L || '';
-        document.querySelector('input[name="size_5L"]').value = purchase.size_5L || '';
-        document.querySelector('input[name="size_free"]').value = purchase.size_free || '';
-        document.querySelector('input[name="size_custom"]').value = purchase.size_custom || '';
+        const sizes = ["size_110", "size_120", "size_130", "size_140", "size_150", "size_160", 
+                      "size_XS", "size_SS", "size_S", "size_M", "size_L", "size_XL", 
+                      "size_2XL", "size_3XL", "size_4XL", "size_5XL", "size_LL", 
+                      "size_3L", "size_4L", "size_5L", "size_free", "size_custom"];
+        sizes.forEach(size => {
+          document.querySelector(`input[name="${size}"]`).value = purchase[size] || '';
+        });
       } else {
         // evPurchase에 발주 정보가 없는 경우 evOrder에서 정보 가져오기
         const orderRes = await fetch('/api/orders/' + orderId);
@@ -1078,28 +1062,13 @@
         document.querySelector('input[name="color"]').value = order.color || '';
         
         // 사이즈별 수량 자동 채우기
-        document.querySelector('input[name="size_110"]').value = order.size_110 || '';
-        document.querySelector('input[name="size_120"]').value = order.size_120 || '';
-        document.querySelector('input[name="size_130"]').value = order.size_130 || '';
-        document.querySelector('input[name="size_140"]').value = order.size_140 || '';
-        document.querySelector('input[name="size_150"]').value = order.size_150 || '';
-        document.querySelector('input[name="size_160"]').value = order.size_160 || '';
-        document.querySelector('input[name="size_XS"]').value = order.size_XS || '';
-        document.querySelector('input[name="size_SS"]').value = order.size_SS || '';
-        document.querySelector('input[name="size_S"]').value = order.size_S || '';
-        document.querySelector('input[name="size_M"]').value = order.size_M || '';
-        document.querySelector('input[name="size_L"]').value = order.size_L || '';
-        document.querySelector('input[name="size_XL"]').value = order.size_XL || '';
-        document.querySelector('input[name="size_2XL"]').value = order.size_2XL || '';
-        document.querySelector('input[name="size_3XL"]').value = order.size_3XL || '';
-        document.querySelector('input[name="size_4XL"]').value = order.size_4XL || '';
-        document.querySelector('input[name="size_5XL"]').value = order.size_5XL || '';
-        document.querySelector('input[name="size_LL"]').value = order.size_LL || '';
-        document.querySelector('input[name="size_3L"]').value = order.size_3L || '';
-        document.querySelector('input[name="size_4L"]').value = order.size_4L || '';
-        document.querySelector('input[name="size_5L"]').value = order.size_5L || '';
-        document.querySelector('input[name="size_free"]').value = order.size_free || '';
-        document.querySelector('input[name="size_custom"]').value = order.size_custom || '';
+        const sizes = ["size_110", "size_120", "size_130", "size_140", "size_150", "size_160", 
+                      "size_XS", "size_SS", "size_S", "size_M", "size_L", "size_XL", 
+                      "size_2XL", "size_3XL", "size_4XL", "size_5XL", "size_LL", 
+                      "size_3L", "size_4L", "size_5L", "size_free", "size_custom"];
+        sizes.forEach(size => {
+          document.querySelector(`input[name="${size}"]`).value = order[size] || '';
+        });
       }
     });
 
