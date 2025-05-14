@@ -29,7 +29,7 @@ app.post('/api/orders', (req, res) => {
             orderId, groupName, representativeName, representativePhone, managerName,
             mainCategory, subCategory, itemName, brandName, itemCode, color,
             totalPrice, size_110, size_120, size_130, size_140, size_150, size_160, size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [orderId, o.groupName, o.representativeName, o.representativePhone, o.managerName,
          o.mainCategory, o.subCategory, o.itemName, o.brandName, o.itemCode, o.color,
          o.totalPrice, ...sizeVals],
@@ -284,6 +284,4 @@ app.get('/api/catalog/colors', (req, res) => {
   );
 });
 
-// === 서버 시작 ===
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
