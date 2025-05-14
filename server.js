@@ -4,16 +4,29 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
-const catalogDb = new sqlite3.Database(path.join(__dirname, 'itemsdatabase.sqlite'));
-const itemsDbPath = path.join(__dirname, 'itemsdatabase.sqlite');
-fs.access(itemsDbPath, fs.constants.F_OK, (err) => {
+
+// Railway 환경변수에서 데이터베이스 경로를 가져오거나, 로컬 개발 환경에서는 기본 경로 사용
+const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
+const catalogDbPath = process.env.CATALOG_DATABASE_URL || path.join(__dirname, 'itemsdatabase.sqlite');
+
+// 데이터베이스 디렉토리가 없으면 생성
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const db = new sqlite3.Database(dbPath);
+const catalogDb = new sqlite3.Database(catalogDbPath);
+
+// 데이터베이스 파일 존재 여부 확인
+fs.access(catalogDbPath, fs.constants.F_OK, (err) => {
   if (err) {
     console.error('itemsdatabase.sqlite 파일이 존재하지 않습니다!');
   } else {
     console.log('itemsdatabase.sqlite 파일이 존재합니다!');
   }
 });
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
