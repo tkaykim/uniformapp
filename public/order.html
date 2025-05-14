@@ -144,6 +144,10 @@
                     <input name="size_XS" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
                   </div>
                   <div class="flex flex-col items-center">
+                    <label class="text-xs text-gray-400 mb-1">SS</label>
+                    <input name="size_SS" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                  </div>
+                  <div class="flex flex-col items-center">
                     <label class="text-xs text-gray-400 mb-1">S</label>
                     <input name="size_S" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
                   </div>
@@ -285,6 +289,10 @@
                 <div class="flex flex-col items-center">
                   <label class="text-xs text-gray-400 mb-1">XS</label>
                   <input name="size_XS" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
+                </div>
+                <div class="flex flex-col items-center">
+                  <label class="text-xs text-gray-400 mb-1">SS</label>
+                  <input name="size_SS" class="form-control w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100 transition text-center" placeholder="수량">
                 </div>
                 <div class="flex flex-col items-center">
                   <label class="text-xs text-gray-400 mb-1">S</label>
@@ -528,7 +536,7 @@
         data.orderDate = kstDate.toISOString().split('T')[0];
       }
 
-      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
+      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_SS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
       
       const res = await fetch('/api/orders', {
         method: 'POST', 
@@ -572,7 +580,7 @@
               <div>
                 <b>주문번호:</b> ${o.orderId} <b>대표자명:</b> ${o.representativeName} <b>연락처:</b> ${o.representativePhone}<br>
                 <b>품명:</b> ${o.itemName} <b>색상:</b> ${o.color}<br>
-                <b>사이즈별 수량:</b> 110: ${o.size_110} / 120: ${o.size_120} / 130: ${o.size_130} / 140: ${o.size_140} / 150: ${o.size_150} / 160: ${o.size_160} / XS: ${o.size_XS} / S: ${o.size_S} / M: ${o.size_M} / L: ${o.size_L} / XL: ${o.size_XL} / 2XL: ${o.size_2XL} / 3XL: ${o.size_3XL} / 4XL: ${o.size_4XL} / 5XL: ${o.size_5XL} / LL: ${o.size_LL} / 3L: ${o.size_3L} / 4L: ${o.size_4L} / 5L: ${o.size_5L} / free: ${o.size_free} / custom: ${o.size_custom}<br>
+                <b>사이즈별 수량:</b> 110: ${o.size_110} / 120: ${o.size_120} / 130: ${o.size_130} / 140: ${o.size_140} / 150: ${o.size_150} / 160: ${o.size_160} / XS: ${o.size_XS} / SS: ${o.size_SS} / S: ${o.size_S} / M: ${o.size_M} / L: ${o.size_L} / XL: ${o.size_XL} / 2XL: ${o.size_2XL} / 3XL: ${o.size_3XL} / 4XL: ${o.size_4XL} / 5XL: ${o.size_5XL} / LL: ${o.size_LL} / 3L: ${o.size_3L} / 4L: ${o.size_4L} / 5L: ${o.size_5L} / free: ${o.size_free} / custom: ${o.size_custom}<br>
                 <b>총수량:</b> ${o.totalQuantity} <b>금액:</b> ${o.totalPrice}
               </div>
             </td>
@@ -662,7 +670,7 @@
               <div>
                 <b>발주번호:</b> ${p.purchaseNumber} <b>주문번호:</b> ${p.orderId}<br>
                 <b>제품명:</b> ${p.itemName || ''} <b>제품코드:</b> ${p.itemCode || ''} <b>색상:</b> ${p.color || ''}<br>
-                <b>사이즈별 수량:</b> 110: ${p.size_110} / 120: ${p.size_120} / 130: ${p.size_130} / 140: ${p.size_140} / 150: ${p.size_150} / 160: ${p.size_160} / XS: ${p.size_XS} / S: ${p.size_S} / M: ${p.size_M} / L: ${p.size_L} / XL: ${p.size_XL} / 2XL: ${p.size_2XL} / 3XL: ${p.size_3XL} / 4XL: ${p.size_4XL} / 5XL: ${p.size_5XL} / LL: ${p.size_LL} / 3L: ${p.size_3L} / 4L: ${p.size_4L} / 5L: ${p.size_5L} / free: ${p.size_free} / custom: ${p.size_custom}<br>
+                <b>사이즈별 수량:</b> 110: ${p.size_110} / 120: ${p.size_120} / 130: ${p.size_130} / 140: ${p.size_140} / 150: ${p.size_150} / 160: ${p.size_160} / XS: ${p.size_XS} / SS: ${p.size_SS} / S: ${p.size_S} / M: ${p.size_M} / L: ${p.size_L} / XL: ${p.size_XL} / 2XL: ${p.size_2XL} / 3XL: ${p.size_3XL} / 4XL: ${p.size_4XL} / 5XL: ${p.size_5XL} / LL: ${p.size_LL} / 3L: ${p.size_3L} / 4L: ${p.size_4L} / 5L: ${p.size_5L} / free: ${p.size_free} / custom: ${p.size_custom}<br>
                 <b>총발주수량:</b> ${p.totalQuantity} <b>총금액:</b> ${p.totalPurchasePrice}
               </div>
             </td>
@@ -981,6 +989,7 @@
       document.querySelector('input[name="size_150"]').value = order.size_150 || '';
       document.querySelector('input[name="size_160"]').value = order.size_160 || '';
       document.querySelector('input[name="size_XS"]').value = order.size_XS || '';
+      document.querySelector('input[name="size_SS"]').value = order.size_SS || '';
       document.querySelector('input[name="size_S"]').value = order.size_S || '';
       document.querySelector('input[name="size_M"]').value = order.size_M || '';
       document.querySelector('input[name="size_L"]').value = order.size_L || '';
@@ -1008,7 +1017,7 @@
       }
       
       // 사이즈별 수량을 숫자로 변환
-      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
+      ["size_110","size_120","size_130","size_140","size_150","size_160","size_XS","size_SS","size_S","size_M","size_L","size_XL","size_2XL","size_3XL","size_4XL","size_5XL","size_LL","size_3L","size_4L","size_5L","size_free","size_custom"].forEach(k=>data[k]=parseInt(data[k]||0));
       
       // 총수량 계산
       data.totalQuantity = Object.keys(data)
