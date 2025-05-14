@@ -107,24 +107,27 @@ app.post('/api/purchases', (req, res) => {
 
       // evPurchase에 저장
       const sql = `INSERT INTO evPurchase (
-        purchaseNumber, orderId, groupName, itemName, itemCode, color, managerName, 
-        purchaseStatus, size_110, size_120, size_130, size_140, size_150, size_160, 
-        size_XS, size_SS, size_S, size_M, size_L, size_XL, size_2XL, size_3XL, 
-        size_4XL, size_5XL, size_LL, size_3L, size_4L, size_5L, size_free, size_custom, 
-        totalQuantity, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+9 hours'))`;
+        orderId, purchaseNumber, itemName, brandName, itemCode, color,
+        size_110, size_120, size_130, size_140, size_150, size_160,
+        size_XS, size_SS, size_S, size_M, size_L, size_XL,
+        size_2XL, size_3XL, size_4XL, size_5XL,
+        size_LL, size_3L, size_4L, size_5L,
+        size_free, size_custom,
+        totalPurchasePrice, purchaseStatus
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       db.run(sql, [
-        purchaseNumber, orderId, groupName || order.groupName, itemName || order.itemName, 
-        itemCode || order.itemCode, color || order.color, managerName, purchaseStatus || '발주전',
+        orderId, purchaseNumber, itemName || order.itemName, order.brandName, 
+        itemCode || order.itemCode, color || order.color,
         size_110 || order.size_110, size_120 || order.size_120, size_130 || order.size_130,
         size_140 || order.size_140, size_150 || order.size_150, size_160 || order.size_160,
         size_XS || order.size_XS, size_SS || order.size_SS, size_S || order.size_S,
         size_M || order.size_M, size_L || order.size_L, size_XL || order.size_XL,
         size_2XL || order.size_2XL, size_3XL || order.size_3XL, size_4XL || order.size_4XL,
         size_5XL || order.size_5XL, size_LL || order.size_LL, size_3L || order.size_3L,
-        size_4L || order.size_4L, size_5L || order.size_5L, size_free || order.size_free,
-        size_custom || order.size_custom, totalQuantity
+        size_4L || order.size_4L, size_5L || order.size_5L,
+        size_free || order.size_free, size_custom || order.size_custom,
+        order.totalPrice, purchaseStatus || '발주전'
       ], function(err) {
         if (err) {
           console.error('발주 등록 중 오류:', err);
