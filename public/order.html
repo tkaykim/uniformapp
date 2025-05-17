@@ -132,36 +132,6 @@
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
-                  </tr>
-          <tr id="purchase-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-                  </tr>
-          <tr id="purchase-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-                  </tr>
-          <tr id="design-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-                  </tr>
-          <tr id="design-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="print-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="printFormDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="print-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="printListDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="delivery-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="deliveryFormDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="delivery-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="cost-form-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="costFormDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="cost-list-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="costListDiv-${o.orderId}"></div></td>
           </tr>
         `;
       });
@@ -1292,28 +1262,25 @@
     function updateTabVisibility() {
       const role = sessionStorage.getItem('role') || '슈퍼관리자';
       
-      // 주문 목록 컬럼/버튼 노출 제어
       setTimeout(() => {
+        // 주문 목록
         const orderTable = document.querySelector('#orderTab table');
         if (orderTable) {
           const ths = orderTable.querySelectorAll('thead th');
           const tds = orderTable.querySelectorAll('tbody tr');
-          // 모든 컬럼을 먼저 보이게 설정
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-          // 디자인관리자: 주문번호, 단체명만 보이게
-          if (role === '디자인관리자') {
-            ths.forEach((th, i) => {
-              if (i !== 0 && i !== 1) th.style.display = 'none';
-            });
-            tds.forEach(tr => {
-              Array.from(tr.children).forEach((td, i) => {
-                if (i !== 0 && i !== 1) td.style.display = 'none';
-              });
-            });
+          if (role === '중간관리자') {
+            // '지출'(비용) 컬럼만 숨김 (마지막 컬럼)
+            ths.forEach((th, i) => { if (i === 9) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i === 9) td.style.display = 'none'; }); });
+          } else if (role === '디자인관리자') {
+            // 주문번호(0), 단체명(1)만 보임
+            ths.forEach((th, i) => { if (i !== 0 && i !== 1) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 0 && i !== 1) td.style.display = 'none'; }); });
           }
         }
-        // 발주 목록 컬럼 노출 제어 (디자인관리자: 제품명, 색상만)
+        // 발주 목록
         const purchaseTable = document.querySelector('#purchaseList')?.closest('table');
         if (purchaseTable) {
           const ths = purchaseTable.querySelectorAll('thead th');
@@ -1321,17 +1288,20 @@
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
           if (role === '디자인관리자') {
-            ths.forEach((th, i) => {
-              if (i !== 3 && i !== 4) th.style.display = 'none'; // 제품명(3), 색상(4)
-            });
-            tds.forEach(tr => {
-              Array.from(tr.children).forEach((td, i) => {
-                if (i !== 3 && i !== 4) td.style.display = 'none';
-              });
-            });
+            // 제품명(3), 색상(4)만 보임
+            ths.forEach((th, i) => { if (i !== 3 && i !== 4) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 3 && i !== 4) td.style.display = 'none'; }); });
           }
         }
-        // 디자인 목록은 디자인관리자에게 전체 노출(기존대로)
+        // 디자인 목록
+        const designTable = document.querySelector('#designList')?.closest('table');
+        if (designTable) {
+          const ths = designTable.querySelectorAll('thead th');
+          const tds = designTable.querySelectorAll('tbody tr');
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          // 디자인관리자는 전체 컬럼 보임(기본)
+        }
       }, 100);
     }
 
@@ -1403,4 +1373,5 @@
     </thead><tbody id="designList"></tbody></table>
   </div>
 </body>
+</html>
 </html>
