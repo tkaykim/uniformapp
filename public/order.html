@@ -1228,62 +1228,71 @@
     const tabPermissions = {
       '슈퍼관리자': ['orderTab'],
       '중간관리자': ['orderTab'],
-      '결제관리자': ['orderTab','costTab'],
-      '디자인관리자': ['designTab']
+      '결제관리자': ['orderTab'],
+      '디자인관리자': ['orderTab']
     };
+
     function setRole(role) {
       sessionStorage.setItem('role', role);
       updateTabVisibility();
     }
+
     function updateTabVisibility() {
       const role = sessionStorage.getItem('role') || '슈퍼관리자';
-      // 탭/섹션 노출 제어
-      document.getElementById('orderTab').style.display = tabPermissions[role].includes('orderTab') ? '' : 'none';
-      if (document.getElementById('purchaseTab')) document.getElementById('purchaseTab').style.display = tabPermissions[role].includes('purchaseTab') ? '' : 'none';
-      if (document.getElementById('designTab')) document.getElementById('designTab').style.display = tabPermissions[role].includes('designTab') ? '' : 'none';
+      
       // 주문 목록 컬럼/버튼 노출 제어
       setTimeout(() => {
         const orderTable = document.querySelector('#orderTab table');
         if (!orderTable) return;
+        
         const ths = orderTable.querySelectorAll('thead th');
         const tds = orderTable.querySelectorAll('tbody tr');
-        // 슈퍼관리자: 모두 보임
-        if (role === '슈퍼관리자') {
-          ths.forEach(th => th.style.display = '');
-          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-        }
-        // 중간관리자: 주문번호, 단체명, 대표자명, 연락처, 매출총금액만 보임 (지출관리 관련 내용 숨김)
-        else if (role === '중간관리자') {
-          ths.forEach((th, i) => {
-            if (i <= 4) th.style.display = ''; else th.style.display = 'none';
-          });
-          tds.forEach(tr => {
-            Array.from(tr.children).forEach((td, i) => {
-              if (i <= 4) td.style.display = ''; else td.style.display = 'none';
+        
+        // 모든 컬럼을 먼저 보이게 설정
+        ths.forEach(th => th.style.display = '');
+        tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+        
+        // 권한별로 숨길 컬럼 설정
+        switch(role) {
+          case '중간관리자':
+            // 주문번호, 단체명, 대표자명, 연락처, 매출총금액만 보이게
+            ths.forEach((th, i) => {
+              if (i > 4) th.style.display = 'none';
             });
-          });
-        }
-        // 결제관리자: 모두 보임
-        else if (role === '결제관리자') {
-          ths.forEach(th => th.style.display = '');
-          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-        }
-        // 디자인관리자: 주문번호, 디자인번호, 제품명, 컬러, 디자인 관련 상세내용만 보임
-        else if (role === '디자인관리자') {
-          ths.forEach((th, i) => {
-            if ([0, 6].includes(i)) th.style.display = ''; else th.style.display = 'none';
-          });
-          tds.forEach(tr => {
-            Array.from(tr.children).forEach((td, i) => {
-              if ([0, 6].includes(i)) td.style.display = ''; else td.style.display = 'none';
+            tds.forEach(tr => {
+              Array.from(tr.children).forEach((td, i) => {
+                if (i > 4) td.style.display = 'none';
+              });
             });
-          });
+            break;
+            
+          case '디자인관리자':
+            // 주문번호, 디자인 관련 컬럼만 보이게
+            ths.forEach((th, i) => {
+              if (i !== 0 && i !== 6) th.style.display = 'none';
+            });
+            tds.forEach(tr => {
+              Array.from(tr.children).forEach((td, i) => {
+                if (i !== 0 && i !== 6) td.style.display = 'none';
+              });
+            });
+            break;
+            
+          // 슈퍼관리자와 결제관리자는 모든 컬럼 보임
+          case '슈퍼관리자':
+          case '결제관리자':
+            ths.forEach(th => th.style.display = '');
+            tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+            break;
         }
       }, 100);
     }
+
     // 페이지 진입 시 권한 기본값
     if (!sessionStorage.getItem('role')) sessionStorage.setItem('role','슈퍼관리자');
+    
     window.onload = function() {
+      loadOrders(); // 기존 데이터 로딩 유지
       updateTabVisibility();
     };
   </script>
