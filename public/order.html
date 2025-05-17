@@ -64,47 +64,58 @@
             <td>
               <button onclick="showPurchaseForm('${o.orderId}')">발주</button>
               <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
-            </td>
-            <td>
-              <button onclick="showPrintForm('${o.orderId}')">인쇄</button>
-              <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
-            </td>
-            <td>
-              <button onclick="showDeliveryForm('${o.orderId}')">배송</button>
-              <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
+              <span id="purchaseStatus-${o.orderId}">-</span>
             </td>
             <td>
               <button onclick="showDesignForm('${o.orderId}')">디자인</button>
               <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
+              <span id="designStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="showPrintForm('${o.orderId}')">인쇄</button>
+              <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
+              <span id="printStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="showDeliveryForm('${o.orderId}')">배송</button>
+              <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
+              <span id="deliveryStatus-${o.orderId}">-</span>
+            </td>
+            <td>
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
             </td>
           </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="purchaseFormDiv-${o.orderId}"></div></td>
+            <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="purchaseListDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="print-form-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="printFormDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="print-list-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="printListDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="delivery-form-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="deliveryFormDiv-${o.orderId}"></div></td>
-          </tr>
-          <tr id="delivery-list-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="deliveryListDiv-${o.orderId}"></div></td>
+            <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="designFormDiv-${o.orderId}"></div></td>
+            <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
-            <td colspan="11"><div id="designListDiv-${o.orderId}"></div></td>
+            <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="print-form-row-${o.orderId}" style="display:none;">
+            <td colspan="10"><div id="printFormDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="print-list-row-${o.orderId}" style="display:none;">
+            <td colspan="10"><div id="printListDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="delivery-form-row-${o.orderId}" style="display:none;">
+            <td colspan="10"><div id="deliveryFormDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="delivery-list-row-${o.orderId}" style="display:none;">
+            <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
           </tr>
         `;
+        // 각 파트별 상태 업데이트
+        updatePurchaseStatus(o.orderId);
+        updateDesignStatus(o.orderId);
+        updatePrintStatus(o.orderId);
+        updateDeliveryStatus(o.orderId);
       });
     }
     async function deleteOrder(orderId) {
@@ -311,7 +322,10 @@
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evPurchase').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const { data, error } = await sb.from('evPurchase')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
         const div = document.getElementById('purchaseListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
@@ -321,12 +335,13 @@
           div.innerHTML = '등록된 발주가 없습니다.';
           return;
         }
-        div.innerHTML = '<b>발주 목록</b><br><table border="1"><tr><th>발주번호</th><th>제품명</th><th>총수량</th><th>관리</th></tr>' +
+        div.innerHTML = '<b>발주 목록</b><br><table border="1"><tr><th>발주번호</th><th>제품명</th><th>총수량</th><th>상태</th><th>관리</th></tr>' +
           data.map(p => `
             <tr>
               <td>${p.purchaseId}</td>
               <td>${p.itemName}</td>
               <td>${p.totalQuantity}</td>
+              <td style="color: ${getStatusColor(p.purchaseStatus)}">${p.purchaseStatus}</td>
               <td>
                 <button onclick="editPurchasePrompt('${p.purchaseId}','${orderId}')">수정</button>
                 <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
@@ -395,7 +410,10 @@
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evPrint').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const { data, error } = await sb.from('evPrint')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
         const div = document.getElementById('printListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
@@ -405,13 +423,13 @@
           div.innerHTML = '등록된 인쇄가 없습니다.';
           return;
         }
-        div.innerHTML = '<b>인쇄 목록</b><br><table border="1"><tr><th>인쇄번호</th><th>인쇄방식</th><th>인쇄소명</th><th>납기일</th><th>관리</th></tr>' +
+        div.innerHTML = '<b>인쇄 목록</b><br><table border="1"><tr><th>인쇄번호</th><th>인쇄방식</th><th>인쇄소명</th><th>상태</th><th>관리</th></tr>' +
           data.map(p => `
             <tr>
               <td>${p.printId}</td>
               <td>${p.printMethod}</td>
               <td>${p.factoryName}</td>
-              <td>${p.expectedDate || ''}</td>
+              <td style="color: ${getStatusColor(p.printStatus)}">${p.printStatus}</td>
               <td>
                 <button onclick="editPrintPrompt('${p.printId}','${orderId}')">수정</button>
                 <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
@@ -474,7 +492,10 @@
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evDelivery').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const { data, error } = await sb.from('evDelivery')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
         const div = document.getElementById('deliveryListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
@@ -484,12 +505,13 @@
           div.innerHTML = '등록된 배송이 없습니다.';
           return;
         }
-        div.innerHTML = '<b>배송 목록</b><br><table border="1"><tr><th>배송번호</th><th>택배사</th><th>송장번호</th><th>관리</th></tr>' +
+        div.innerHTML = '<b>배송 목록</b><br><table border="1"><tr><th>배송번호</th><th>택배사</th><th>송장번호</th><th>상태</th><th>관리</th></tr>' +
           data.map(d => `
             <tr>
               <td>${d.deliveryId}</td>
               <td>${d.courierName}</td>
               <td>${d.trackingNumber}</td>
+              <td style="color: ${getStatusColor(d.deliveryStatus)}">${d.deliveryStatus}</td>
               <td>
                 <button onclick="editDeliveryPrompt('${d.deliveryId}','${orderId}')">수정</button>
                 <button onclick="deleteDelivery('${d.deliveryId}','${orderId}')">삭제</button>
@@ -549,7 +571,10 @@
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evDesign').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const { data, error } = await sb.from('evDesign')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
         const div = document.getElementById('designListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
@@ -559,12 +584,13 @@
           div.innerHTML = '등록된 디자인이 없습니다.';
           return;
         }
-        div.innerHTML = '<b>디자인 목록</b><br><table border="1"><tr><th>디자인번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>' +
+        div.innerHTML = '<b>디자인 목록</b><br><table border="1"><tr><th>디자인번호</th><th>제목</th><th>작성자</th><th>상태</th><th>관리</th></tr>' +
           data.map(d => `
             <tr>
               <td>${d.designId}</td>
               <td>${d.title}</td>
               <td>${d.createdBy}</td>
+              <td style="color: ${getStatusColor(d.designStatus)}">${d.designStatus}</td>
               <td>
                 <button onclick="editDesignPrompt('${d.designId}','${orderId}')">수정</button>
                 <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
@@ -585,6 +611,90 @@
       const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
       if (error) alert('수정 실패: ' + error.message);
       else toggleDesignList(orderId, true);
+    }
+
+    // 상태 업데이트 함수들
+    async function updatePurchaseStatus(orderId) {
+      const { data, error } = await sb.from('evPurchase')
+        .select('purchaseStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false })
+        .limit(1);
+      
+      const statusSpan = document.getElementById('purchaseStatus-' + orderId);
+      if (error || !data.length) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+      } else {
+        statusSpan.textContent = data[0].purchaseStatus;
+        statusSpan.style.color = getStatusColor(data[0].purchaseStatus);
+      }
+    }
+
+    async function updateDesignStatus(orderId) {
+      const { data, error } = await sb.from('evDesign')
+        .select('designStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false })
+        .limit(1);
+      
+      const statusSpan = document.getElementById('designStatus-' + orderId);
+      if (error || !data.length) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+      } else {
+        statusSpan.textContent = data[0].designStatus;
+        statusSpan.style.color = getStatusColor(data[0].designStatus);
+      }
+    }
+
+    async function updatePrintStatus(orderId) {
+      const { data, error } = await sb.from('evPrint')
+        .select('printStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false })
+        .limit(1);
+      
+      const statusSpan = document.getElementById('printStatus-' + orderId);
+      if (error || !data.length) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+      } else {
+        statusSpan.textContent = data[0].printStatus;
+        statusSpan.style.color = getStatusColor(data[0].printStatus);
+      }
+    }
+
+    async function updateDeliveryStatus(orderId) {
+      const { data, error } = await sb.from('evDelivery')
+        .select('deliveryStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false })
+        .limit(1);
+      
+      const statusSpan = document.getElementById('deliveryStatus-' + orderId);
+      if (error || !data.length) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+      } else {
+        statusSpan.textContent = data[0].deliveryStatus;
+        statusSpan.style.color = getStatusColor(data[0].deliveryStatus);
+      }
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case '발주전':
+        case '착수전':
+        case '배송전':
+          return 'red';
+        case '진행중':
+          return 'orange';
+        case '완료':
+          return 'green';
+        default:
+          return 'black';
+      }
     }
 
     window.onload = () => showTab('orderTab');
@@ -608,7 +718,7 @@
     <table border="1"><thead>
       <tr>
         <th>주문번호</th><th>단체명</th><th>담당자</th><th>연락처</th><th>총금액</th>
-        <th>발주</th><th>인쇄</th><th>배송</th><th>관리</th>
+        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>관리</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
   </div>
