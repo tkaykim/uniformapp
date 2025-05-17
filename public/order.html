@@ -53,8 +53,10 @@
         tbody.innerHTML = '<tr><td colspan="10">불러오기 실패: '+error.message+'</td></tr>';
         return;
       }
+      // 주문 row HTML을 먼저 모두 누적
+      let html = '';
       data.forEach(o => {
-        tbody.innerHTML += `
+        html += `
           <tr>
             <td>${o.orderId}
               <button onclick="expandAll('${o.orderId}')" style="font-size:11px;">모두 펼치기</button>
@@ -114,7 +116,10 @@
             <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
           </tr>
         `;
-        // 모두 접기(기본)
+      });
+      tbody.innerHTML = html;
+      // 모든 주문에 대해 collapseAll을 한 번 더 호출 (실제 DOM에 반영된 후)
+      data.forEach(o => {
         collapseAll(o.orderId);
         // 각 파트별 상태 업데이트
         updatePurchaseStatus(o.orderId);
