@@ -215,14 +215,14 @@
       else {
         alert('발주 등록 성공');
         // 입력값 초기화
-        document.getElementById('itemName-' + orderId).value = '';
-        document.getElementById('itemCode-' + orderId).value = '';
-        document.getElementById('color-' + orderId).value = '';
-        document.getElementById('managerName-' + orderId).value = '';
-        sizes.forEach(k => { document.getElementById(`${k}-${orderId}`).value = 0; });
-        document.getElementById('totalQuantity-' + orderId).value = 0;
+        if(document.getElementById('itemName-' + orderId)) document.getElementById('itemName-' + orderId).value = '';
+        if(document.getElementById('itemCode-' + orderId)) document.getElementById('itemCode-' + orderId).value = '';
+        if(document.getElementById('color-' + orderId)) document.getElementById('color-' + orderId).value = '';
+        if(document.getElementById('managerName-' + orderId)) document.getElementById('managerName-' + orderId).value = '';
+        sizes.forEach(k => { if(document.getElementById(`${k}-${orderId}`)) document.getElementById(`${k}-${orderId}`).value = 0; });
+        if(document.getElementById('totalQuantity-' + orderId)) document.getElementById('totalQuantity-' + orderId).value = 0;
         // 폼 접기
-        document.getElementById('purchase-form-row-' + orderId).style.display = 'none';
+        if(document.getElementById('purchase-form-row-' + orderId)) document.getElementById('purchase-form-row-' + orderId).style.display = 'none';
         togglePurchaseList(orderId, true);
       }
     }
@@ -287,12 +287,12 @@
       else {
         alert('디자인 등록 성공');
         // 입력값 초기화
-        document.getElementById('title-' + orderId).value = '';
-        document.getElementById('description-' + orderId).value = '';
-        document.getElementById('driveLink-' + orderId).value = '';
-        document.getElementById('createdBy-' + orderId).value = '';
+        if(document.getElementById('title-' + orderId)) document.getElementById('title-' + orderId).value = '';
+        if(document.getElementById('description-' + orderId)) document.getElementById('description-' + orderId).value = '';
+        if(document.getElementById('driveLink-' + orderId)) document.getElementById('driveLink-' + orderId).value = '';
+        if(document.getElementById('createdBy-' + orderId)) document.getElementById('createdBy-' + orderId).value = '';
         // 폼 접기
-        document.getElementById('design-form-row-' + orderId).style.display = 'none';
+        if(document.getElementById('design-form-row-' + orderId)) document.getElementById('design-form-row-' + orderId).style.display = 'none';
         toggleDesignList(orderId, true);
       }
     }
@@ -372,13 +372,13 @@
       else {
         alert('인쇄 등록 성공');
         // 입력값 초기화
-        document.getElementById('printMethod-' + orderId).value = '';
-        document.getElementById('factoryName-' + orderId).value = '';
-        document.getElementById('factoryContact-' + orderId).value = '';
-        document.getElementById('deliveryAddress-' + orderId).value = '';
-        document.getElementById('expectedDate-' + orderId).value = '';
+        if(document.getElementById('printMethod-' + orderId)) document.getElementById('printMethod-' + orderId).value = '';
+        if(document.getElementById('factoryName-' + orderId)) document.getElementById('factoryName-' + orderId).value = '';
+        if(document.getElementById('factoryContact-' + orderId)) document.getElementById('factoryContact-' + orderId).value = '';
+        if(document.getElementById('deliveryAddress-' + orderId)) document.getElementById('deliveryAddress-' + orderId).value = '';
+        if(document.getElementById('expectedDate-' + orderId)) document.getElementById('expectedDate-' + orderId).value = '';
         // 폼 접기
-        document.getElementById('print-form-row-' + orderId).style.display = 'none';
+        if(document.getElementById('print-form-row-' + orderId)) document.getElementById('print-form-row-' + orderId).style.display = 'none';
         togglePrintList(orderId, true);
       }
     }
@@ -487,10 +487,10 @@
       else {
         alert('배송 등록 성공');
         // 입력값 초기화
-        document.getElementById('courierName-' + orderId).value = '';
-        document.getElementById('trackingNumber-' + orderId).value = '';
+        if(document.getElementById('courierName-' + orderId)) document.getElementById('courierName-' + orderId).value = '';
+        if(document.getElementById('trackingNumber-' + orderId)) document.getElementById('trackingNumber-' + orderId).value = '';
         // 폼 접기
-        document.getElementById('delivery-form-row-' + orderId).style.display = 'none';
+        if(document.getElementById('delivery-form-row-' + orderId)) document.getElementById('delivery-form-row-' + orderId).style.display = 'none';
         toggleDeliveryList(orderId, true);
       }
     }
