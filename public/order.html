@@ -4,10 +4,31 @@
   <meta charset="UTF-8">
   <title>유니폼 운영 시스템 - CRUD</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* 기존 커스텀 스타일은 최소화, Tailwind로 대체 */
-    .cost-btn-group { gap: 0.5rem; }
+    .cost-btn-group {
+      display: flex;
+      gap: 6px;
+      background: #f7f7fa;
+      border: 1px solid #d0d0e0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 6px 0 2px 0;
+      box-shadow: 0 1px 3px 0 #eee;
+      align-items: center;
+      width: fit-content;
+    }
+    .cost-btn-group button {
+      background: #fff;
+      border: 1px solid #b0b0c0;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cost-btn-group button:hover {
+      background: #e6eaff;
+    }
   </style>
   <script>
     // supabase 변수명 중복 방지: window.supabase로 접근
@@ -1087,7 +1108,7 @@
         alert('수정 실패: ' + error.message);
         return;
       }
-      
+
       alert('수정 완료');
       togglePrintList(orderId, true);
     }
@@ -1311,39 +1332,63 @@
     };
   </script>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900">
-  <div class="max-w-7xl mx-auto p-6">
-    <div class="mb-6 flex items-center gap-4">
-      <b class="text-xl font-bold text-blue-700">권한 선택(테스트용):</b>
-      <button onclick="setRole('슈퍼관리자')" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition">슈퍼관리자</button>
-      <button onclick="setRole('중간관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">중간관리자</button>
-      <button onclick="setRole('결제관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">결제관리자</button>
-      <button onclick="setRole('디자인관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">디자인관리자</button>
-    </div>
-    <div id="orderTab" class="tab bg-white rounded-lg shadow p-6" style="display:block;">
-      <h2 class="text-2xl font-bold mb-4 text-blue-700">주문 등록</h2>
-      <div class="flex flex-wrap gap-3 mb-6 items-center">
-        <input id="orderDate" type="date" value="2024-05-20" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <input id="groupName" placeholder="단체명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <input id="representativeName" placeholder="대표자명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <input id="representativePhone" placeholder="대표자연락처" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <input id="managerName" placeholder="담당자명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <input id="totalPrice" placeholder="총금액" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
-        <button onclick="createOrder()" class="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">등록</button>
-      </div>
-      <h3 class="text-lg font-semibold mb-2 text-blue-600">주문 목록</h3>
-      <div class="overflow-x-auto">
-        <table class="min-w-full border rounded-lg overflow-hidden shadow text-sm bg-white">
-          <thead class="bg-blue-50 text-blue-900">
-            <tr>
-              <th class="px-3 py-2 border">주문번호</th><th class="px-3 py-2 border">단체명</th><th class="px-3 py-2 border">대표자명</th><th class="px-3 py-2 border">대표자연락처</th><th class="px-3 py-2 border">담당자</th><th class="px-3 py-2 border">총금액</th>
-              <th class="px-3 py-2 border">발주</th><th class="px-3 py-2 border">디자인</th><th class="px-3 py-2 border">인쇄</th><th class="px-3 py-2 border">배송</th><th class="px-3 py-2 border">지출</th>
-            </tr>
-          </thead>
-          <tbody id="orderList"></tbody>
-        </table>
-      </div>
-    </div>
+<body>
+  <div style="margin-bottom:10px;">
+    <b>권한 선택(테스트용):</b>
+    <button onclick="setRole('슈퍼관리자')">슈퍼관리자</button>
+    <button onclick="setRole('중간관리자')">중간관리자</button>
+    <button onclick="setRole('결제관리자')">결제관리자</button>
+    <button onclick="setRole('디자인관리자')">디자인관리자</button>
+  </div>
+  <!-- 주문관리 -->
+  <div id="orderTab" class="tab" style="display:block;">
+    <h2>주문 등록</h2>
+    <input id="orderDate" type="date" value="2024-05-20">
+    <input id="groupName" placeholder="단체명">
+    <input id="representativeName" placeholder="대표자명">
+    <input id="representativePhone" placeholder="대표자연락처">
+    <input id="managerName" placeholder="담당자명">
+    <input id="totalPrice" placeholder="총금액">
+    <button onclick="createOrder()">등록</button>
+    <h3>주문 목록</h3>
+    <table border="1"><thead>
+      <tr>
+        <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
+        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th>
+      </tr>
+    </thead><tbody id="orderList"></tbody></table>
+  </div>
+
+  <!-- 발주관리 -->
+  <div id="purchaseTab" class="tab" style="display:none;">
+    <h2>발주 등록</h2>
+    <input id="purchaseOrderId" placeholder="주문번호">
+    <input id="purchaseGroupName" placeholder="단체명">
+    <input id="itemName" placeholder="제품명">
+    <input id="itemCode" placeholder="제품코드">
+    <input id="color" placeholder="색상">
+    <input id="purchaseManagerName" placeholder="담당자명">
+    <input id="purchaseTotalQuantity" placeholder="총수량">
+    <button onclick="createPurchase()">등록</button>
+    <h3>발주 목록</h3>
+    <table border="1"><thead>
+      <tr><th>발주번호</th><th>주문번호</th><th>단체명</th><th>제품명</th><th>총수량</th><th>관리</th></tr>
+    </thead><tbody id="purchaseList"></tbody></table>
+  </div>
+
+  <!-- 디자인관리 -->
+  <div id="designTab" class="tab" style="display:none;">
+    <h2>디자인 등록</h2>
+    <input id="designOrderId" placeholder="주문번호">
+    <input id="title" placeholder="디자인 제목">
+    <input id="description" placeholder="설명">
+    <input id="driveLink" placeholder="구글드라이브 링크">
+    <input id="createdBy" placeholder="작성자">
+    <button onclick="createDesign()">등록</button>
+    <h3>디자인 목록</h3>
+    <table border="1"><thead>
+      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
+    </thead><tbody id="designList"></tbody></table>
   </div>
 </body>
 </html>
