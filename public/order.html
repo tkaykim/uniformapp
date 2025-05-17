@@ -87,15 +87,14 @@
               <span id="deliveryStatus-${o.orderId}">-</span>
             </td>
             <td>
-              <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
-              <button onclick="deleteOrder('${o.orderId}')">삭제</button>
-            </td>
-            <td>
-              <button onclick="showCostForm('발주','${o.orderId}')">발주비용 추가</button>
-              <button onclick="showCostForm('디자인','${o.orderId}')">디자인비용 추가</button>
-              <button onclick="showCostForm('인쇄','${o.orderId}')">인쇄비용 추가</button>
-              <button onclick="showCostForm('배송','${o.orderId}')">배송비용 추가</button>
-              <button onclick="showCostForm('기타','${o.orderId}')">기타비용 추가</button>
+              <button onclick="toggleCostButtons('${o.orderId}')">비용추가</button>
+              <span id="costBtnWrap-${o.orderId}" style="display:none;">
+                <button onclick=\"showCostForm('발주','${o.orderId}')\">발주비용 추가</button>
+                <button onclick=\"showCostForm('디자인','${o.orderId}')\">디자인비용 추가</button>
+                <button onclick=\"showCostForm('인쇄','${o.orderId}')\">인쇄비용 추가</button>
+                <button onclick=\"showCostForm('배송','${o.orderId}')\">배송비용 추가</button>
+                <button onclick=\"showCostForm('기타','${o.orderId}')\">기타비용 추가</button>
+              </span>
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
@@ -1172,6 +1171,13 @@
       let sum = 0;
       if (data && data.length) sum = data.reduce((a, b) => a + (b.amount || 0), 0);
       document.getElementById('costSum-' + orderId).textContent = sum;
+    }
+
+    // 비용추가 버튼 토글 함수
+    function toggleCostButtons(orderId) {
+      const wrap = document.getElementById('costBtnWrap-' + orderId);
+      if (wrap.style.display === 'none') wrap.style.display = '';
+      else wrap.style.display = 'none';
     }
 
     window.onload = () => showTab('orderTab');
