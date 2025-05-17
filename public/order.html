@@ -114,6 +114,8 @@
             <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
           </tr>
         `;
+        // 모두 접기(기본)
+        collapseAll(o.orderId);
         // 각 파트별 상태 업데이트
         updatePurchaseStatus(o.orderId);
         updateDesignStatus(o.orderId);
