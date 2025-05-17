@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>유니폼 운영 시스템 - CRUD</title>
+  <title>유니폼 운영 시스템</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     // supabase 변수명 중복 방지: window.supabase로 접근
@@ -1058,6 +1058,54 @@
       document.getElementById('design-list-row-' + orderId).style.display = 'none';
       document.getElementById('print-list-row-' + orderId).style.display = 'none';
       document.getElementById('delivery-list-row-' + orderId).style.display = 'none';
+    }
+
+    // 상태 변경 함수들(상태 변경 후 상태 span도 즉시 갱신)
+    async function updatePurchaseStatus(orderId, purchaseId, newStatus) {
+      const { error } = await sb.from('evPurchase')
+        .update({ purchaseStatus: newStatus })
+        .eq('purchaseId', purchaseId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      // 상태 span 즉시 갱신
+      updatePurchaseStatus(orderId);
+      // 목록 새로고침
+      togglePurchaseList(orderId, true);
+    }
+    async function updateDesignStatus(orderId, designId, newStatus) {
+      const { error } = await sb.from('evDesign')
+        .update({ designStatus: newStatus })
+        .eq('designId', designId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      updateDesignStatus(orderId);
+      toggleDesignList(orderId, true);
+    }
+    async function updatePrintStatus(orderId, printId, newStatus) {
+      const { error } = await sb.from('evPrint')
+        .update({ printStatus: newStatus })
+        .eq('printId', printId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      updatePrintStatus(orderId);
+      togglePrintList(orderId, true);
+    }
+    async function updateDeliveryStatus(orderId, deliveryId, newStatus) {
+      const { error } = await sb.from('evDelivery')
+        .update({ deliveryStatus: newStatus })
+        .eq('deliveryId', deliveryId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      updateDeliveryStatus(orderId);
+      toggleDeliveryList(orderId, true);
     }
 
     window.onload = () => showTab('orderTab');
