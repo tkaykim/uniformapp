@@ -4,101 +4,1346 @@
   <meta charset="UTF-8">
   <title>유니폼 운영 시스템 - CRUD</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    /* 기존 스타일 제거 또는 최소화 */
-    .cost-btn-group button { font-size: 13px; }
+    /* 기존 커스텀 스타일은 최소화, Tailwind로 대체 */
+    .cost-btn-group { gap: 0.5rem; }
   </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="flex min-h-screen">
-    <!-- 사이드바 -->
-    <aside class="w-60 bg-white shadow-lg flex flex-col py-8 px-6">
-      <div class="flex items-center gap-2 mb-10">
-        <span class="text-blue-600 text-2xl">👕</span>
-        <span class="font-bold text-lg text-blue-700">모두의 유니폼 운영<br>시스템</span>
-      </div>
-      <nav class="flex flex-col gap-2">
-        <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-blue-700 bg-blue-100 font-semibold"><span>🛒</span>주문 관리</button>
-        <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-blue-50"><span>📦</span>발주 관리</button>
-        <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-blue-50"><span>🎨</span>디자인 관리</button>
-        <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-blue-50"><span>🖨️</span>인쇄 관리</button>
-      </nav>
-    </aside>
-    <!-- 메인 -->
-    <main class="flex-1 px-10 py-8">
-      <div class="flex justify-between items-center mb-8">
-        <h2 class="text-2xl font-bold text-gray-800">주문 관리</h2>
-        <div class="text-gray-400 text-sm">{오늘 날짜/시간}</div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-        <h3 class="text-lg font-semibold mb-4">주문 등록</h3>
-        <div class="flex gap-3 flex-wrap items-center">
-          <input id="orderDate" type="date" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" value="2024-05-20">
-          <input id="groupName" placeholder="단체명" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <input id="representativeName" placeholder="대표자명" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <input id="representativePhone" placeholder="대표자연락처" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <input id="managerName" placeholder="담당자명" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <input id="totalPrice" placeholder="총금액" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <button onclick="createOrder()" class="bg-blue-600 text-white font-semibold rounded-lg px-6 py-2 hover:bg-blue-700 transition">등록</button>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-md p-6">
-        <h3 class="text-lg font-semibold mb-4">주문 목록</h3>
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm text-gray-800">
-            <thead>
-              <tr class="bg-blue-50">
-                <th class="py-3 px-2 font-semibold">주문번호</th>
-                <th class="py-3 px-2 font-semibold">단체명</th>
-                <th class="py-3 px-2 font-semibold">대표자명</th>
-                <th class="py-3 px-2 font-semibold">대표자연락처</th>
-                <th class="py-3 px-2 font-semibold">담당자</th>
-                <th class="py-3 px-2 font-semibold">총금액</th>
-                <th class="py-3 px-2 font-semibold">발주</th>
-                <th class="py-3 px-2 font-semibold">디자인</th>
-                <th class="py-3 px-2 font-semibold">인쇄</th>
-                <th class="py-3 px-2 font-semibold">배송</th>
-                <th class="py-3 px-2 font-semibold">지출</th>
-              </tr>
-            </thead>
-            <tbody id="orderList"></tbody>
+  <script>
+    // supabase 변수명 중복 방지: window.supabase로 접근
+    const sb = window.supabase.createClient(
+      'https://pebyrncdfrbgwhgkagtk.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlYnlybmNkZnJiZ3doZ2thZ3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0NzM1NzMsImV4cCI6MjA2MzA0OTU3M30.C_OW_XKunWMulydwOs-Tb5xEU2rxYPLFfubIJsh39Ew'
+    );
+
+    // 탭 전환
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(el => el.style.display = 'none');
+      document.getElementById(tab).style.display = 'block';
+      if(tab==='orderTab') loadOrders();
+      if(tab==='purchaseTab') loadPurchases();
+      if(tab==='designTab') loadDesigns();
+    }
+
+    // 주문 CRUD
+    async function createOrder() {
+      const orderId = generateOrderId();
+      const { data, error } = await sb.from('evOrder').insert([{
+        orderId,
+        orderDate: document.getElementById('orderDate').value,
+        groupName: document.getElementById('groupName').value,
+        representativeName: document.getElementById('representativeName').value,
+        representativePhone: document.getElementById('representativePhone').value,
+        managerName: document.getElementById('managerName').value,
+        totalPrice: parseInt(document.getElementById('totalPrice').value) || 0,
+        orderStatus: '주문접수'
+      }]);
+      if (error) alert('주문 등록 실패: ' + error.message);
+      else {
+        alert('주문 등록 성공');
+        loadOrders();
+      }
+    }
+    function generateOrderId() {
+      // 현재 UTC 기준 시간을 KST로 변환
+      const now = new Date();
+      const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      return kst.getFullYear().toString() +
+        String(kst.getMonth() + 1).padStart(2, '0') +
+        String(kst.getDate()).padStart(2, '0') +
+        Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    }
+    async function loadOrders() {
+      const { data, error } = await sb.from('evOrder').select('*').order('createdAt', { ascending: false });
+      const tbody = document.getElementById('orderList');
+      tbody.innerHTML = '';
+      if (error) {
+        tbody.innerHTML = '<tr><td colspan="10">불러오기 실패: '+error.message+'</td></tr>';
+        return;
+      }
+      // 주문 row HTML을 먼저 누적
+      let html = '';
+      data.forEach(o => {
+        html += `
+          <tr>
+            <td>${o.orderId}
+              <button onclick="expandAll('${o.orderId}')" style="font-size:11px;">모두 펼치기</button>
+              <button onclick="collapseAll('${o.orderId}')" style="font-size:11px;">모두 접기</button>
+              <button onclick="editOrder('${o.orderId}')" style="font-size:11px;">수정</button>
+              <button onclick="deleteOrder('${o.orderId}')" style="font-size:11px;">삭제</button>
+            </td>
+            <td>${o.groupName}</td>
+            <td>${o.representativeName || ''}</td>
+            <td>${o.representativePhone || ''}</td>
+            <td>${o.managerName || ''}</td>
+            <td>${o.totalPrice}</td>
+            <td>
+              <button onclick="showPurchaseForm('${o.orderId}')">발주 추가</button>
+              <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
+              <span id="purchaseStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="showDesignForm('${o.orderId}')">디자인 추가</button>
+              <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
+              <span id="designStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="showPrintForm('${o.orderId}')">인쇄 추가</button>
+              <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
+              <span id="printStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="showDeliveryForm('${o.orderId}')">배송 추가</button>
+              <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
+              <span id="deliveryStatus-${o.orderId}">-</span>
+            </td>
+            <td>
+              <button onclick="toggleCostButtons('${o.orderId}')">비용추가</button>
+              <span id="costBtnWrap-${o.orderId}" style="display:none;">
+                <span class="cost-btn-group">
+                  <button onclick=\"showCostForm('발주','${o.orderId}')\">발주비용 추가</button>
+                  <button onclick=\"showCostForm('디자인','${o.orderId}')\">디자인비용 추가</button>
+                  <button onclick=\"showCostForm('인쇄','${o.orderId}')\">인쇄비용 추가</button>
+                  <button onclick=\"showCostForm('배송','${o.orderId}')\">배송비용 추가</button>
+                  <button onclick=\"showCostForm('기타','${o.orderId}')\">기타비용 추가</button>
+                </span>
+              </span>
+              <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
+              <span id="costSum-${o.orderId}">0</span>원
+            </td>
+          </tr>
+          <tr id="purchase-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="purchaseFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="purchase-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="purchaseListDiv-${o.orderId}"></div></td></tr>
+          <tr id="design-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="designFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="design-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="designListDiv-${o.orderId}"></div></td></tr>
+          <tr id="print-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="printFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="print-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="printListDiv-${o.orderId}"></div></td></tr>
+          <tr id="delivery-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="deliveryFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="delivery-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="deliveryListDiv-${o.orderId}"></div></td></tr>
+          <tr id="cost-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="costFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="cost-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="costListDiv-${o.orderId}"></div></td></tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      // 모든 주문에 대해 collapseAll을 한 번 더 호출 (실제 DOM에 반영된 후)
+      data.forEach(o => {
+        collapseAll(o.orderId);
+        // 각 파트별 상태 업데이트
+        updatePurchaseStatus(o.orderId);
+        updateDesignStatus(o.orderId);
+        updatePrintStatus(o.orderId);
+        updateDeliveryStatus(o.orderId);
+        updateCostSum(o.orderId);
+      });
+    }
+    async function deleteOrder(orderId) {
+      if (!confirm('정말 이 주문을 삭제하시겠습니까?\n연관된 발주, 디자인, 인쇄, 배송 데이터는 유지됩니다.')) return;
+
+      const { error } = await sb.from('evOrder')
+        .delete()
+        .eq('orderId', orderId);
+
+      if (error) {
+        alert('주문 삭제 실패: ' + error.message);
+        return;
+      }
+
+      alert('주문 삭제 완료');
+      loadOrders();
+    }
+    async function editOrder(orderId) {
+      const { data, error } = await sb.from('evOrder')
+        .select('*')
+        .eq('orderId', orderId)
+        .single();
+      
+      if (error) {
+        alert('주문 정보 조회 실패: ' + error.message);
+        return;
+      }
+
+      const newGroupName = prompt('단체명', data.groupName);
+      if (!newGroupName) return;
+      
+      const newRepresentativeName = prompt('대표자명', data.representativeName);
+      if (!newRepresentativeName) return;
+      
+      const newRepresentativePhone = prompt('대표자연락처', data.representativePhone);
+      if (!newRepresentativePhone) return;
+      
+      const newManagerName = prompt('담당자명', data.managerName);
+      if (!newManagerName) return;
+      
+      const newTotalPrice = prompt('총금액', data.totalPrice);
+      if (!newTotalPrice) return;
+
+      const { error: updateError } = await sb.from('evOrder')
+        .update({
+          groupName: newGroupName,
+          representativeName: newRepresentativeName,
+          representativePhone: newRepresentativePhone,
+          managerName: newManagerName,
+          totalPrice: parseInt(newTotalPrice) || 0
+        })
+        .eq('orderId', orderId);
+
+      if (updateError) {
+        alert('주문 수정 실패: ' + updateError.message);
+        return;
+      }
+
+      alert('주문 수정 완료');
+      loadOrders();
+    }
+
+    // 발주 CRUD
+    async function createPurchase() {
+      const purchaseId = generatePurchaseId();
+      const { data, error } = await sb.from('evPurchase').insert([{
+        purchaseId,
+        orderId: document.getElementById('purchaseOrderId').value,
+        groupName: document.getElementById('purchaseGroupName').value,
+        itemName: document.getElementById('itemName').value,
+        itemCode: document.getElementById('itemCode').value,
+        color: document.getElementById('color').value,
+        managerName: document.getElementById('purchaseManagerName').value,
+        totalQuantity: parseInt(document.getElementById('purchaseTotalQuantity').value) || 0,
+        purchaseStatus: '발주전'
+      }]);
+      if (error) alert('발주 등록 실패: ' + error.message);
+      else {
+        alert('발주 등록 성공');
+        loadPurchases();
+      }
+    }
+    function generatePurchaseId() {
+      const d = new Date();
+      return d.getFullYear().toString() + 
+        String(d.getMonth()+1).padStart(2,'0') + 
+        String(d.getDate()).padStart(2,'0') + 
+        '_PUR' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+    }
+    async function loadPurchases() {
+      const { data, error } = await sb.from('evPurchase').select('*').order('createdAt', { ascending: false });
+      const tbody = document.getElementById('purchaseList');
+      tbody.innerHTML = '';
+      if (error) {
+        tbody.innerHTML = '<tr><td colspan="6">불러오기 실패: '+error.message+'</td></tr>';
+        return;
+      }
+      data.forEach(p => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.purchaseId}</td>
+            <td>${p.orderId}</td>
+            <td>${p.groupName}</td>
+            <td>${p.itemName}</td>
+            <td>${p.totalQuantity}</td>
+            <td>
+              <button onclick="editPurchasePrompt('${p.purchaseId}')">수정</button>
+              <button onclick="deletePurchase('${p.purchaseId}')">삭제</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    async function deletePurchase(purchaseId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evPurchase').delete().eq('purchaseId', purchaseId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else loadPurchases();
+    }
+    async function editPurchasePrompt(purchaseId) {
+      const newName = prompt('새 제품명 입력');
+      if (!newName) return;
+      const { error } = await sb.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
+      if (error) alert('수정 실패: ' + error.message);
+      else loadPurchases();
+    }
+
+    // 디자인 CRUD
+    async function createDesign() {
+      const designId = generateDesignId();
+      const { data, error } = await sb.from('evDesign').insert([{
+        designId,
+        orderId: document.getElementById('designOrderId').value,
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        driveLink: document.getElementById('driveLink').value,
+        createdBy: document.getElementById('createdBy').value,
+        designStatus: '착수전'
+      }]);
+      if (error) alert('디자인 등록 실패: ' + error.message);
+      else {
+        alert('디자인 등록 성공');
+      loadDesigns();
+    }
+    }
+    function generateDesignId() {
+      const d = new Date();
+      return d.getFullYear().toString() + 
+        String(d.getMonth()+1).padStart(2,'0') + 
+        String(d.getDate()).padStart(2,'0') + 
+        '_DES' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+    }
+    async function loadDesigns() {
+      const { data, error } = await sb.from('evDesign').select('*').order('createdAt', { ascending: false });
+      const tbody = document.getElementById('designList');
+      tbody.innerHTML = '';
+      if (error) {
+        tbody.innerHTML = '<tr><td colspan="6">불러오기 실패: '+error.message+'</td></tr>';
+        return;
+      }
+      data.forEach(d => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.designId}</td>
+            <td>${d.orderId}</td>
+            <td>${d.title}</td>
+            <td>${d.createdBy}</td>
+            <td>
+              <button onclick="editDesignPrompt('${d.designId}')">수정</button>
+              <button onclick="deleteDesign('${d.designId}')">삭제</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    async function deleteDesign(designId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evDesign').delete().eq('designId', designId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else loadDesigns();
+    }
+    async function editDesignPrompt(designId) {
+      const newTitle = prompt('새 디자인 제목 입력');
+      if (!newTitle) return;
+      const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
+      if (error) alert('수정 실패: ' + error.message);
+      else loadDesigns();
+    }
+
+    // 발주 폼/목록
+    function showPurchaseForm(orderId) {
+      document.querySelectorAll('[id^=purchase-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('purchase-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('purchaseFormDiv-' + orderId);
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      let sizeInputs = '';
+      sizes.forEach(k => {
+        sizeInputs += `
+          <div style="display:inline-block;margin:5px;">
+            <label>${k.replace('size_','').toUpperCase()}</label>
+            <input id="${k}-${orderId}" type="number" value="0" style="width:50px;" 
+                   onchange="updateTotalQuantity('${orderId}')" min="0">
+          </div>`;
+      });
+      div.innerHTML = `
+        <div style='text-align:right'><button onclick="closePurchaseForm('${orderId}')">닫기</button></div>
+        <b>발주 등록 (주문번호: ${orderId})</b><br>
+        <input id="itemName-${orderId}" placeholder="제품명">
+        <input id="itemCode-${orderId}" placeholder="제품코드">
+        <input id="color-${orderId}" placeholder="색상">
+        <input id="managerName-${orderId}" placeholder="담당자명">
+        <input id="totalQuantity-${orderId}" placeholder="총수량" readonly style="background-color:#f0f0f0"><br>
+        <div>${sizeInputs}</div>
+        <button onclick="createPurchase('${orderId}')">발주 등록</button>
+      `;
+    }
+    function closePurchaseForm(orderId) {
+      document.getElementById('purchase-form-row-' + orderId).style.display = 'none';
+    }
+    async function createPurchase(orderId) {
+      const purchaseId = generatePurchaseId();
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      const sizeData = {};
+      sizes.forEach(k => {
+        sizeData[k] = parseInt(document.getElementById(`${k}-${orderId}`).value) || 0;
+      });
+      const totalQuantity = sizes.reduce((sum, k) => sum + (sizeData[k] || 0), 0);
+      const { error } = await sb.from('evPurchase').insert([{
+        purchaseId,
+        orderId,
+        groupName: '',
+        itemName: document.getElementById('itemName-' + orderId).value,
+        itemCode: document.getElementById('itemCode-' + orderId).value,
+        color: document.getElementById('color-' + orderId).value,
+        managerName: document.getElementById('managerName-' + orderId).value,
+        ...sizeData,
+        totalQuantity,
+        purchaseStatus: '발주전'
+      }]);
+      if (error) alert('발주 등록 실패: ' + error.message);
+      else {
+        alert('발주 등록 성공');
+        togglePurchaseList(orderId, true);
+      }
+    }
+    async function togglePurchaseList(orderId, forceOpen) {
+      const row = document.getElementById('purchase-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evPurchase')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
+        const div = document.getElementById('purchaseListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+          return;
+        }
+        if (!data.length) {
+          div.innerHTML = '등록된 발주가 없습니다.';
+          return;
+        }
+
+        const sizes = [
+          "size_110","size_120","size_130","size_140","size_150","size_160",
+          "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+          "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+          "size_3L","size_4L","size_5L","size_free","size_custom"
+        ];
+
+        const sizeHeaders = sizes.map(k => `<th>${k.replace('size_','').toUpperCase()}</th>`).join('');
+
+        div.innerHTML = `
+          <b>발주 목록</b><br>
+          <table border="1">
+            <tr>
+              <th>발주번호</th>
+              <th>제품명</th>
+              <th>제품코드</th>
+              <th>색상</th>
+              <th>담당자</th>
+              <th>총수량</th>
+              <th>상태</th>
+              ${sizeHeaders}
+              <th>관리</th>
+            </tr>
+            ${data.map(p => `
+              <tr id="purchase-row-${p.purchaseId}">
+                <td>${p.purchaseId}</td>
+                <td><span class="editable" data-field="itemName">${p.itemName}</span></td>
+                <td><span class="editable" data-field="itemCode">${p.itemCode}</span></td>
+                <td><span class="editable" data-field="color">${p.color}</span></td>
+                <td><span class="editable" data-field="managerName">${p.managerName}</span></td>
+                <td><span class="total-quantity">${p.totalQuantity}</span></td>
+                <td>
+                  <select onchange="changePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
+                          style="color: ${getStatusColor(p.purchaseStatus)}">
+                    <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
+              </select>
+            </td>
+                ${sizes.map(k => `<td><span class="editable" data-field="${k}">${p[k] || 0}</span></td>`).join('')}
+                <td>
+                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')" id="edit-btn-${p.purchaseId}">수정</button>
+                  <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
+                  <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
+            </td>
+          </tr>
+            `).join('')}
           </table>
-        </div>
+        `;
+      }
+    }
+    async function deletePurchase(purchaseId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evPurchase').delete().eq('purchaseId', purchaseId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else togglePurchaseList(orderId, true);
+    }
+    async function editPurchasePrompt(purchaseId, orderId) {
+      const newName = prompt('새 제품명 입력');
+      if (!newName) return;
+      const { error } = await sb.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
+      if (error) alert('수정 실패: ' + error.message);
+      else togglePurchaseList(orderId, true);
+    }
+
+    // 인쇄 폼/목록
+    function showPrintForm(orderId) {
+      document.querySelectorAll('[id^=print-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('print-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('printFormDiv-' + orderId);
+      div.innerHTML = `
+        <div style='text-align:right'><button onclick="closePrintForm('${orderId}')">닫기</button></div>
+        <b>인쇄 등록 (주문번호: ${orderId})</b><br>
+        <input id="printMethod-${orderId}" placeholder="인쇄방식">
+        <input id="factoryName-${orderId}" placeholder="인쇄소명">
+        <input id="factoryContact-${orderId}" placeholder="인쇄소 연락처">
+        <input id="deliveryAddress-${orderId}" placeholder="납품주소">
+        <input id="expectedDate-${orderId}" type="date" placeholder="납기일">
+        <button onclick="createPrint('${orderId}')">인쇄 등록</button>
+      `;
+    }
+    function closePrintForm(orderId) {
+      document.getElementById('print-form-row-' + orderId).style.display = 'none';
+    }
+    async function createPrint(orderId) {
+      const printId = generatePrintId();
+      const { error } = await sb.from('evPrint').insert([{
+        printId,
+        orderId,
+        printMethod: document.getElementById('printMethod-' + orderId).value,
+        factoryName: document.getElementById('factoryName-' + orderId).value,
+        factoryContact: document.getElementById('factoryContact-' + orderId).value,
+        deliveryAddress: document.getElementById('deliveryAddress-' + orderId).value,
+        expectedDate: document.getElementById('expectedDate-' + orderId).value,
+        printStatus: '발주전'
+      }]);
+      if (error) alert('인쇄 등록 실패: ' + error.message);
+      else {
+        alert('인쇄 등록 성공');
+        togglePrintList(orderId, true);
+      }
+    }
+    function generatePrintId() {
+      const d = new Date();
+      return d.getFullYear().toString() + 
+        String(d.getMonth()+1).padStart(2,'0') + 
+        String(d.getDate()).padStart(2,'0') + 
+        '_PRT' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+    }
+    async function togglePrintList(orderId, forceOpen) {
+      const row = document.getElementById('print-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evPrint')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
+        const div = document.getElementById('printListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+          return;
+        }
+        if (!data.length) {
+          div.innerHTML = '등록된 인쇄가 없습니다.';
+          return;
+        }
+        div.innerHTML = `
+          <b>인쇄 목록</b><br>
+          <table border="1">
+            <tr>
+              <th>인쇄번호</th>
+              <th>인쇄방식</th>
+              <th>인쇄소명</th>
+              <th>인쇄소 연락처</th>
+              <th>납품주소</th>
+              <th>납기일</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+            ${data.map(p => `
+              <tr id="print-row-${p.printId}">
+                <td>${p.printId}</td>
+                <td><span class="editable" data-field="printMethod">${p.printMethod}</span></td>
+                <td><span class="editable" data-field="factoryName">${p.factoryName}</span></td>
+                <td><span class="editable" data-field="factoryContact">${p.factoryContact}</span></td>
+                <td><span class="editable" data-field="deliveryAddress">${p.deliveryAddress}</span></td>
+                <td><span class="editable" data-field="expectedDate">${p.expectedDate || ''}</span></td>
+                <td>
+                  <select onchange="changePrintStatus('${orderId}', '${p.printId}', this.value)"
+                          style="color: ${getStatusColor(p.printStatus)}">
+                    <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                <td>
+                  <button onclick="togglePrintEdit('${p.printId}', '${orderId}')" id="edit-btn-${p.printId}">수정</button>
+                  <button onclick="savePrintEdit('${p.printId}', '${orderId}')" style="display:none" id="save-btn-${p.printId}">저장</button>
+                  <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
+            </td>
+          </tr>
+            `).join('')}
+          </table>
+        `;
+      }
+    }
+    async function deletePrint(printId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evPrint').delete().eq('printId', printId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else togglePrintList(orderId, true);
+    }
+    async function editPrintPrompt(printId, orderId) {
+      const newMethod = prompt('새 인쇄방식 입력');
+      if (!newMethod) return;
+      const { error } = await sb.from('evPrint').update({ printMethod: newMethod }).eq('printId', printId);
+      if (error) alert('수정 실패: ' + error.message);
+      else togglePrintList(orderId, true);
+    }
+
+    // 배송 폼/목록
+    function showDeliveryForm(orderId) {
+      document.querySelectorAll('[id^=delivery-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('delivery-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('deliveryFormDiv-' + orderId);
+      div.innerHTML = `
+        <div style='text-align:right'><button onclick="closeDeliveryForm('${orderId}')">닫기</button></div>
+        <b>배송 등록 (주문번호: ${orderId})</b><br>
+        <input id="courierName-${orderId}" placeholder="택배사">
+        <input id="trackingNumber-${orderId}" placeholder="송장번호">
+        <button onclick="createDelivery('${orderId}')">배송 등록</button>
+      `;
+    }
+    function closeDeliveryForm(orderId) {
+      document.getElementById('delivery-form-row-' + orderId).style.display = 'none';
+    }
+    async function createDelivery(orderId) {
+      const deliveryId = generateDeliveryId();
+      const { error } = await sb.from('evDelivery').insert([{
+        deliveryId,
+        orderId,
+        courierName: document.getElementById('courierName-' + orderId).value,
+        trackingNumber: document.getElementById('trackingNumber-' + orderId).value,
+        deliveryStatus: '배송전'
+      }]);
+      if (error) alert('배송 등록 실패: ' + error.message);
+      else {
+        alert('배송 등록 성공');
+        toggleDeliveryList(orderId, true);
+      }
+    }
+    function generateDeliveryId() {
+      const d = new Date();
+      return d.getFullYear().toString() + 
+        String(d.getMonth()+1).padStart(2,'0') + 
+        String(d.getDate()).padStart(2,'0') + 
+        '_DLV' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+    }
+    async function toggleDeliveryList(orderId, forceOpen) {
+      const row = document.getElementById('delivery-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evDelivery')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
+        const div = document.getElementById('deliveryListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+        return;
+      }
+        if (!data.length) {
+          div.innerHTML = '등록된 배송이 없습니다.';
+          return;
+        }
+        div.innerHTML = `
+          <b>배송 목록</b><br>
+          <table border="1">
+            <tr>
+              <th>배송번호</th>
+              <th>택배사</th>
+              <th>송장번호</th>
+              <th>배송주소</th>
+              <th>수령인</th>
+              <th>연락처</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+            ${data.map(d => `
+              <tr id="delivery-row-${d.deliveryId}">
+                <td>${d.deliveryId}</td>
+                <td><span class="editable" data-field="courierName">${d.courierName}</span></td>
+                <td><span class="editable" data-field="trackingNumber">${d.trackingNumber}</span></td>
+                <td><span class="editable" data-field="deliveryAddress">${d.deliveryAddress}</span></td>
+                <td><span class="editable" data-field="recipientName">${d.recipientName}</span></td>
+                <td><span class="editable" data-field="recipientPhone">${d.recipientPhone}</span></td>
+                <td>
+                  <select onchange="changeDeliveryStatus('${orderId}', '${d.deliveryId}', this.value)"
+                          style="color: ${getStatusColor(d.deliveryStatus)}">
+                    <option value="배송전" ${d.deliveryStatus === '배송전' ? 'selected' : ''}>배송전</option>
+                    <option value="진행중" ${d.deliveryStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${d.deliveryStatus === '완료' ? 'selected' : ''}>완료</option>
+              </select>
+            </td>
+                <td>
+                  <button onclick="toggleDeliveryEdit('${d.deliveryId}', '${orderId}')" id="edit-btn-${d.deliveryId}">수정</button>
+                  <button onclick="saveDeliveryEdit('${d.deliveryId}', '${orderId}')" style="display:none" id="save-btn-${d.deliveryId}">저장</button>
+                  <button onclick="deleteDelivery('${d.deliveryId}','${orderId}')">삭제</button>
+            </td>
+          </tr>
+            `).join('')}
+          </table>
+        `;
+      }
+    }
+    async function deleteDelivery(deliveryId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evDelivery').delete().eq('deliveryId', deliveryId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else toggleDeliveryList(orderId, true);
+    }
+    async function editDeliveryPrompt(deliveryId, orderId) {
+      const newCourier = prompt('새 택배사 입력');
+      if (!newCourier) return;
+      const { error } = await sb.from('evDelivery').update({ courierName: newCourier }).eq('deliveryId', deliveryId);
+      if (error) alert('수정 실패: ' + error.message);
+      else toggleDeliveryList(orderId, true);
+    }
+
+    // 디자인 폼/목록
+    function showDesignForm(orderId) {
+      document.querySelectorAll('[id^=design-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('design-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('designFormDiv-' + orderId);
+      div.innerHTML = `
+        <div style='text-align:right'><button onclick="closeDesignForm('${orderId}')">닫기</button></div>
+        <b>디자인 등록 (주문번호: ${orderId})</b><br>
+        <input id="title-${orderId}" placeholder="디자인 제목">
+        <input id="description-${orderId}" placeholder="설명">
+        <input id="driveLink-${orderId}" placeholder="구글드라이브 링크">
+        <input id="createdBy-${orderId}" placeholder="작성자">
+        <button onclick="createDesign('${orderId}')">디자인 등록</button>
+      `;
+    }
+    function closeDesignForm(orderId) {
+      document.getElementById('design-form-row-' + orderId).style.display = 'none';
+    }
+    async function createDesign(orderId) {
+      const designId = generateDesignId();
+      const { error } = await sb.from('evDesign').insert([{
+        designId,
+        orderId,
+        title: document.getElementById('title-' + orderId).value,
+        description: document.getElementById('description-' + orderId).value,
+        driveLink: document.getElementById('driveLink-' + orderId).value,
+        createdBy: document.getElementById('createdBy-' + orderId).value,
+        designStatus: '착수전'
+      }]);
+      if (error) alert('디자인 등록 실패: ' + error.message);
+      else {
+        alert('디자인 등록 성공');
+        toggleDesignList(orderId, true);
+      }
+    }
+    async function toggleDesignList(orderId, forceOpen) {
+      const row = document.getElementById('design-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evDesign')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
+        const div = document.getElementById('designListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+        return;
+      }
+        if (!data.length) {
+          div.innerHTML = '등록된 디자인이 없습니다.';
+          return;
+        }
+        div.innerHTML = `
+          <b>디자인 목록</b><br>
+          <table border="1">
+            <tr>
+              <th>디자인번호</th>
+              <th>제목</th>
+              <th>설명</th>
+              <th>구글드라이브 링크</th>
+              <th>작성자</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+            ${data.map(d => `
+              <tr id="design-row-${d.designId}">
+                <td>${d.designId}</td>
+                <td><span class="editable" data-field="title">${d.title}</span></td>
+                <td><span class="editable" data-field="description">${d.description}</span></td>
+                <td><span class="editable" data-field="driveLink">${d.driveLink}</span></td>
+                <td><span class="editable" data-field="createdBy">${d.createdBy}</span></td>
+                <td>
+                  <select onchange="changeDesignStatus('${orderId}', '${d.designId}', this.value)"
+                          style="color: ${getStatusColor(d.designStatus)}">
+                    <option value="착수전" ${d.designStatus === '착수전' ? 'selected' : ''}>착수전</option>
+                    <option value="진행중" ${d.designStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${d.designStatus === '완료' ? 'selected' : ''}>완료</option>
+              </select>
+            </td>
+                <td>
+                  <button onclick="toggleDesignEdit('${d.designId}', '${orderId}')" id="edit-btn-${d.designId}">수정</button>
+                  <button onclick="saveDesignEdit('${d.designId}', '${orderId}')" style="display:none" id="save-btn-${d.designId}">저장</button>
+                  <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
+            </td>
+          </tr>
+            `).join('')}
+          </table>
+        `;
+      }
+    }
+    async function deleteDesign(designId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evDesign').delete().eq('designId', designId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else toggleDesignList(orderId, true);
+    }
+    async function editDesignPrompt(designId, orderId) {
+      const newTitle = prompt('새 디자인 제목 입력');
+      if (!newTitle) return;
+      const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
+      if (error) alert('수정 실패: ' + error.message);
+      else toggleDesignList(orderId, true);
+    }
+
+    // 상태 업데이트 함수들 (목록 펼치지 않고 상태 span만 업데이트)
+    async function updatePurchaseStatus(orderId) {
+      // 가장 최근 발주 상태만 표시
+      const { data, error } = await sb.from('evPurchase')
+        .select('purchaseStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
+      const statusSpan = document.getElementById('purchaseStatus-' + orderId);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+        return;
+      }
+      statusSpan.textContent = data[0].purchaseStatus;
+      statusSpan.style.color = getStatusColor(data[0].purchaseStatus);
+    }
+    async function updateDesignStatus(orderId) {
+      const { data, error } = await sb.from('evDesign')
+        .select('designStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
+      const statusSpan = document.getElementById('designStatus-' + orderId);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+        return;
+      }
+      statusSpan.textContent = data[0].designStatus;
+      statusSpan.style.color = getStatusColor(data[0].designStatus);
+    }
+    async function updatePrintStatus(orderId) {
+      const { data, error } = await sb.from('evPrint')
+        .select('printStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
+      const statusSpan = document.getElementById('printStatus-' + orderId);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+        return;
+      }
+      statusSpan.textContent = data[0].printStatus;
+      statusSpan.style.color = getStatusColor(data[0].printStatus);
+    }
+    async function updateDeliveryStatus(orderId) {
+      const { data, error } = await sb.from('evDelivery')
+        .select('deliveryStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
+      const statusSpan = document.getElementById('deliveryStatus-' + orderId);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+        return;
+      }
+      statusSpan.textContent = data[0].deliveryStatus;
+      statusSpan.style.color = getStatusColor(data[0].deliveryStatus);
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case '발주전':
+        case '착수전':
+        case '배송전':
+          return 'red';
+        case '진행중':
+          return 'orange';
+        case '완료':
+          return 'green';
+        default:
+          return 'black';
+      }
+    }
+
+    // 총 수량 자동 계산 함수
+    function updateTotalQuantity(orderId) {
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      let total = 0;
+      sizes.forEach(k => {
+        const value = parseInt(document.getElementById(`${k}-${orderId}`).value) || 0;
+        total += value;
+      });
+      document.getElementById('totalQuantity-' + orderId).value = total;
+    }
+
+    // 발주 수정 모드 토글
+    function togglePurchaseEdit(purchaseId, orderId) {
+      const row = document.getElementById('purchase-row-' + purchaseId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + purchaseId);
+      const saveBtn = document.getElementById('save-btn-' + purchaseId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        if (field.startsWith('size_')) {
+          // 사이즈별 수량 필드
+          span.innerHTML = `<input type="number" value="${currentValue}" 
+                                 id="edit-${field}-${purchaseId}" 
+                                 onchange="updateEditTotalQuantity('${purchaseId}')" 
+                                 min="0" style="width:50px">`;
+        } else {
+          // 일반 텍스트 필드
+          span.innerHTML = `<input type="text" value="${currentValue}" 
+                                 id="edit-${field}-${purchaseId}" 
+                                 style="width:100%">`;
+        }
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 수정 중인 발주의 총 수량 업데이트
+    function updateEditTotalQuantity(purchaseId) {
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      let total = 0;
+      sizes.forEach(k => {
+        const value = parseInt(document.getElementById(`edit-${k}-${purchaseId}`).value) || 0;
+        total += value;
+      });
+      const row = document.getElementById('purchase-row-' + purchaseId);
+      row.querySelector('.total-quantity').textContent = total;
+    }
+
+    // 발주 수정 저장
+    async function savePurchaseEdit(purchaseId, orderId) {
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+
+      const updateData = {
+        itemName: document.getElementById('edit-itemName-' + purchaseId).value,
+        itemCode: document.getElementById('edit-itemCode-' + purchaseId).value,
+        color: document.getElementById('edit-color-' + purchaseId).value,
+        managerName: document.getElementById('edit-managerName-' + purchaseId).value
+      };
+
+      // 사이즈별 수량 추가
+      sizes.forEach(k => {
+        updateData[k] = parseInt(document.getElementById(`edit-${k}-${purchaseId}`).value) || 0;
+      });
+
+      // 총 수량 계산
+      updateData.totalQuantity = sizes.reduce((sum, k) => sum + (updateData[k] || 0), 0);
+
+      const { error } = await sb.from('evPurchase')
+        .update(updateData)
+        .eq('purchaseId', purchaseId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+
+      alert('수정 완료');
+      togglePurchaseList(orderId, true);
+    }
+
+    // 디자인 수정 모드 토글
+    function toggleDesignEdit(designId, orderId) {
+      const row = document.getElementById('design-row-' + designId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + designId);
+      const saveBtn = document.getElementById('save-btn-' + designId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        span.innerHTML = `<input type="text" value="${currentValue}" 
+                               id="edit-${field}-${designId}" 
+                               style="width:100%">`;
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 인쇄 수정 모드 토글
+    function togglePrintEdit(printId, orderId) {
+      const row = document.getElementById('print-row-' + printId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + printId);
+      const saveBtn = document.getElementById('save-btn-' + printId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        if (field === 'expectedDate') {
+          span.innerHTML = `<input type="date" value="${currentValue}" 
+                                 id="edit-${field}-${printId}" 
+                                 style="width:100%">`;
+        } else {
+          span.innerHTML = `<input type="text" value="${currentValue}" 
+                                 id="edit-${field}-${printId}" 
+                                 style="width:100%">`;
+        }
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 배송 수정 모드 토글
+    function toggleDeliveryEdit(deliveryId, orderId) {
+      const row = document.getElementById('delivery-row-' + deliveryId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + deliveryId);
+      const saveBtn = document.getElementById('save-btn-' + deliveryId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        span.innerHTML = `<input type="text" value="${currentValue}" 
+                               id="edit-${field}-${deliveryId}" 
+                               style="width:100%">`;
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 디자인 수정 저장
+    async function saveDesignEdit(designId, orderId) {
+      const updateData = {
+        title: document.getElementById('edit-title-' + designId).value,
+        description: document.getElementById('edit-description-' + designId).value,
+        driveLink: document.getElementById('edit-driveLink-' + designId).value,
+        createdBy: document.getElementById('edit-createdBy-' + designId).value
+      };
+
+      const { error } = await sb.from('evDesign')
+        .update(updateData)
+        .eq('designId', designId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+      
+      alert('수정 완료');
+      toggleDesignList(orderId, true);
+    }
+
+    // 인쇄 수정 저장
+    async function savePrintEdit(printId, orderId) {
+      const updateData = {
+        printMethod: document.getElementById('edit-printMethod-' + printId).value,
+        factoryName: document.getElementById('edit-factoryName-' + printId).value,
+        factoryContact: document.getElementById('edit-factoryContact-' + printId).value,
+        deliveryAddress: document.getElementById('edit-deliveryAddress-' + printId).value,
+        expectedDate: document.getElementById('edit-expectedDate-' + printId).value
+      };
+
+      const { error } = await sb.from('evPrint')
+        .update(updateData)
+        .eq('printId', printId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+      
+      alert('수정 완료');
+      togglePrintList(orderId, true);
+    }
+
+    // 배송 수정 저장
+    async function saveDeliveryEdit(deliveryId, orderId) {
+      const updateData = {
+        courierName: document.getElementById('edit-courierName-' + deliveryId).value,
+        trackingNumber: document.getElementById('edit-trackingNumber-' + deliveryId).value,
+        deliveryAddress: document.getElementById('edit-deliveryAddress-' + deliveryId).value,
+        recipientName: document.getElementById('edit-recipientName-' + deliveryId).value,
+        recipientPhone: document.getElementById('edit-recipientPhone-' + deliveryId).value
+      };
+
+      const { error } = await sb.from('evDelivery')
+        .update(updateData)
+        .eq('deliveryId', deliveryId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+      
+      alert('수정 완료');
+      toggleDeliveryList(orderId, true);
+    }
+
+    // 모두 펼치기/접기 함수 추가
+    function expandAll(orderId) {
+      document.getElementById('purchase-list-row-' + orderId).style.display = '';
+      document.getElementById('design-list-row-' + orderId).style.display = '';
+      document.getElementById('print-list-row-' + orderId).style.display = '';
+      document.getElementById('delivery-list-row-' + orderId).style.display = '';
+      // 목록 새로고침
+      togglePurchaseList(orderId, true);
+      toggleDesignList(orderId, true);
+      togglePrintList(orderId, true);
+      toggleDeliveryList(orderId, true);
+    }
+    function collapseAll(orderId) {
+      const rows = [
+        document.getElementById('purchase-list-row-' + orderId),
+        document.getElementById('design-list-row-' + orderId),
+        document.getElementById('print-list-row-' + orderId),
+        document.getElementById('delivery-list-row-' + orderId)
+      ];
+      rows.forEach(row => { if (row) row.style.display = 'none'; });
+    }
+
+    // 상태 select에서 변경 시 DB에 즉시 반영하고 상태 span도 갱신
+    async function changePurchaseStatus(orderId, purchaseId, newStatus) {
+      const { error } = await sb.from('evPurchase')
+        .update({ purchaseStatus: newStatus })
+        .eq('purchaseId', purchaseId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      await updatePurchaseStatus(orderId);
+    }
+    async function changeDesignStatus(orderId, designId, newStatus) {
+      const { error } = await sb.from('evDesign')
+        .update({ designStatus: newStatus })
+        .eq('designId', designId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      await updateDesignStatus(orderId);
+    }
+    async function changePrintStatus(orderId, printId, newStatus) {
+      const { error } = await sb.from('evPrint')
+        .update({ printStatus: newStatus })
+        .eq('printId', printId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      await updatePrintStatus(orderId);
+    }
+
+    // 비용 폼 표시 함수
+    function showCostForm(type, orderId) {
+      document.querySelectorAll('[id^=cost-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('cost-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('costFormDiv-' + orderId);
+      div.innerHTML = `
+        <b>${type} 비용 추가</b><br>
+        <input id="costTitle-${orderId}" placeholder="비용명">
+        <input id="costAmount-${orderId}" type="number" placeholder="금액">
+        <input id="costMemo-${orderId}" placeholder="비고">
+        <button onclick="createCost('${orderId}','${type}')">저장</button>
+        <button onclick="document.getElementById('cost-form-row-${orderId}').style.display='none'">취소</button>
+      `;
+    }
+    // 비용 등록 함수
+    async function createCost(orderId, type) {
+      const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+      const title = document.getElementById('costTitle-' + orderId).value;
+      const amount = parseInt(document.getElementById('costAmount-' + orderId).value) || 0;
+      const memo = document.getElementById('costMemo-' + orderId).value;
+      if (!title || !amount) { alert('비용명과 금액을 입력하세요'); return; }
+      const { error } = await sb.from('evCost').insert([{ costId, orderId, type, title, amount, memo }]);
+      if (error) { alert('비용 등록 실패: ' + error.message); return; }
+      document.getElementById('cost-form-row-' + orderId).style.display = 'none';
+      updateCostSum(orderId);
+      toggleCostList(orderId, true);
+    }
+    // 비용 내역 토글
+    async function toggleCostList(orderId, forceOpen) {
+      const row = document.getElementById('cost-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evCost').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const div = document.getElementById('costListDiv-' + orderId);
+        if (error) { div.innerHTML = '불러오기 실패: ' + error.message; return; }
+        if (!data.length) { div.innerHTML = '등록된 비용이 없습니다.'; return; }
+        div.innerHTML = `<b>비용 내역</b><br><table border="1"><tr><th>구분</th><th>비용명</th><th>금액</th><th>비고</th><th>지출</th></tr>` +
+          data.map(c => `
+            <tr>
+              <td>${c.type}</td>
+              <td>${c.title}</td>
+              <td>${c.amount}</td>
+              <td>${c.memo || ''}</td>
+              <td><button onclick="deleteCost('${c.costId}','${orderId}')">삭제</button></td>
+            </tr>
+          `).join('') + '</table>';
+      }
+    }
+    // 비용 삭제
+    async function deleteCost(costId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evCost').delete().eq('costId', costId);
+      if (error) { alert('삭제 실패: ' + error.message); return; }
+      updateCostSum(orderId);
+      toggleCostList(orderId, true);
+    }
+    // 비용합계 업데이트
+    async function updateCostSum(orderId) {
+      const { data, error } = await sb.from('evCost').select('amount').eq('orderId', orderId);
+      let sum = 0;
+      if (data && data.length) sum = data.reduce((a, b) => a + (b.amount || 0), 0);
+      document.getElementById('costSum-' + orderId).textContent = sum;
+    }
+
+    // 비용추가 버튼 토글 함수
+    function toggleCostButtons(orderId) {
+      const wrap = document.getElementById('costBtnWrap-' + orderId);
+      if (wrap.style.display === 'none') wrap.style.display = '';
+      else wrap.style.display = 'none';
+    }
+
+    // 권한별 탭/섹션 노출 정의
+    const tabPermissions = {
+      '슈퍼관리자': ['orderTab'],
+      '중간관리자': ['orderTab'],
+      '결제관리자': ['orderTab'],
+      '디자인관리자': ['orderTab']
+    };
+
+    function setRole(role) {
+      sessionStorage.setItem('role', role);
+      updateTabVisibility();
+    }
+
+    function updateTabVisibility() {
+      const role = sessionStorage.getItem('role') || '슈퍼관리자';
+      
+      setTimeout(() => {
+        // 주문 목록
+        const orderTable = document.querySelector('#orderTab table');
+        if (orderTable) {
+          const ths = orderTable.querySelectorAll('thead th');
+          const tds = orderTable.querySelectorAll('tbody tr');
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          if (role === '중간관리자') {
+            // '지출'(비용) 컬럼만 숨김 (마지막 컬럼)
+            ths.forEach((th, i) => { if (i === 9) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i === 9) td.style.display = 'none'; }); });
+          } else if (role === '디자인관리자') {
+            // 주문번호(0), 단체명(1)만 보임
+            ths.forEach((th, i) => { if (i !== 0 && i !== 1) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 0 && i !== 1) td.style.display = 'none'; }); });
+          }
+        }
+        // 발주 목록
+        const purchaseTable = document.querySelector('#purchaseList')?.closest('table');
+        if (purchaseTable) {
+          const ths = purchaseTable.querySelectorAll('thead th');
+          const tds = purchaseTable.querySelectorAll('tbody tr');
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          if (role === '디자인관리자') {
+            // 제품명(3), 색상(4)만 보임
+            ths.forEach((th, i) => { if (i !== 3 && i !== 4) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 3 && i !== 4) td.style.display = 'none'; }); });
+          }
+        }
+        // 디자인 목록
+        const designTable = document.querySelector('#designList')?.closest('table');
+        if (designTable) {
+          const ths = designTable.querySelectorAll('thead th');
+          const tds = designTable.querySelectorAll('tbody tr');
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          // 디자인관리자는 전체 컬럼 보임(기본)
+        }
+      }, 100);
+    }
+
+    // 페이지 진입 시 권한 기본값
+    if (!sessionStorage.getItem('role')) sessionStorage.setItem('role','슈퍼관리자');
+    
+    window.onload = function() {
+      loadOrders(); // 기존 데이터 로딩 유지
+      updateTabVisibility();
+    };
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900">
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="mb-6 flex items-center gap-4">
+      <b class="text-xl font-bold text-blue-700">권한 선택(테스트용):</b>
+      <button onclick="setRole('슈퍼관리자')" class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition">슈퍼관리자</button>
+      <button onclick="setRole('중간관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">중간관리자</button>
+      <button onclick="setRole('결제관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">결제관리자</button>
+      <button onclick="setRole('디자인관리자')" class="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition">디자인관리자</button>
+    </div>
+    <div id="orderTab" class="tab bg-white rounded-lg shadow p-6" style="display:block;">
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">주문 등록</h2>
+      <div class="flex flex-wrap gap-3 mb-6 items-center">
+        <input id="orderDate" type="date" value="2024-05-20" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <input id="groupName" placeholder="단체명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <input id="representativeName" placeholder="대표자명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <input id="representativePhone" placeholder="대표자연락처" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <input id="managerName" placeholder="담당자명" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <input id="totalPrice" placeholder="총금액" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-400">
+        <button onclick="createOrder()" class="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">등록</button>
       </div>
-    </main>
-  </div>
-
-  <!-- 발주관리 -->
-  <div id="purchaseTab" class="tab" style="display:none;">
-    <h2>발주 등록</h2>
-    <input id="purchaseOrderId" placeholder="주문번호">
-    <input id="purchaseGroupName" placeholder="단체명">
-    <input id="itemName" placeholder="제품명">
-    <input id="itemCode" placeholder="제품코드">
-    <input id="color" placeholder="색상">
-    <input id="purchaseManagerName" placeholder="담당자명">
-    <input id="purchaseTotalQuantity" placeholder="총수량">
-    <button onclick="createPurchase()">등록</button>
-    <h3>발주 목록</h3>
-    <table border="1"><thead>
-      <tr><th>발주번호</th><th>주문번호</th><th>단체명</th><th>제품명</th><th>총수량</th><th>관리</th></tr>
-    </thead><tbody id="purchaseList"></tbody></table>
-  </div>
-
-  <!-- 디자인관리 -->
-  <div id="designTab" class="tab" style="display:none;">
-    <h2>디자인 등록</h2>
-    <input id="designOrderId" placeholder="주문번호">
-    <input id="title" placeholder="디자인 제목">
-    <input id="description" placeholder="설명">
-    <input id="driveLink" placeholder="구글드라이브 링크">
-    <input id="createdBy" placeholder="작성자">
-    <button onclick="createDesign()">등록</button>
-    <h3>디자인 목록</h3>
-    <table border="1"><thead>
-      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
-    </thead><tbody id="designList"></tbody></table>
+      <h3 class="text-lg font-semibold mb-2 text-blue-600">주문 목록</h3>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border rounded-lg overflow-hidden shadow text-sm bg-white">
+          <thead class="bg-blue-50 text-blue-900">
+            <tr>
+              <th class="px-3 py-2 border">주문번호</th><th class="px-3 py-2 border">단체명</th><th class="px-3 py-2 border">대표자명</th><th class="px-3 py-2 border">대표자연락처</th><th class="px-3 py-2 border">담당자</th><th class="px-3 py-2 border">총금액</th>
+              <th class="px-3 py-2 border">발주</th><th class="px-3 py-2 border">디자인</th><th class="px-3 py-2 border">인쇄</th><th class="px-3 py-2 border">배송</th><th class="px-3 py-2 border">지출</th>
+            </tr>
+          </thead>
+          <tbody id="orderList"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </body>
 </html>
