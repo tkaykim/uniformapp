@@ -1295,48 +1295,43 @@
       // 주문 목록 컬럼/버튼 노출 제어
       setTimeout(() => {
         const orderTable = document.querySelector('#orderTab table');
-        if (!orderTable) return;
-        
-        const ths = orderTable.querySelectorAll('thead th');
-        const tds = orderTable.querySelectorAll('tbody tr');
-        
-        // 모든 컬럼을 먼저 보이게 설정
-        ths.forEach(th => th.style.display = '');
-        tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-        
-        // 권한별로 숨길 컬럼 설정
-        switch(role) {
-          case '중간관리자':
-            // 지출(비용) 관련 컬럼만 숨김 (마지막 컬럼)
+        if (orderTable) {
+          const ths = orderTable.querySelectorAll('thead th');
+          const tds = orderTable.querySelectorAll('tbody tr');
+          // 모든 컬럼을 먼저 보이게 설정
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          // 디자인관리자: 주문번호, 단체명만 보이게
+          if (role === '디자인관리자') {
             ths.forEach((th, i) => {
-              if (i === 9) th.style.display = 'none'; // 관리(비용) 컬럼 숨김
+              if (i !== 0 && i !== 1) th.style.display = 'none';
             });
             tds.forEach(tr => {
               Array.from(tr.children).forEach((td, i) => {
-                if (i === 9) td.style.display = 'none'; // 관리(비용) 컬럼 숨김
+                if (i !== 0 && i !== 1) td.style.display = 'none';
               });
             });
-            break;
-            
-          case '디자인관리자':
-            // 주문번호, 디자인 관련 컬럼만 보이게
-            ths.forEach((th, i) => {
-              if (i !== 0 && i !== 6) th.style.display = 'none';
-            });
-            tds.forEach(tr => {
-              Array.from(tr.children).forEach((td, i) => {
-                if (i !== 0 && i !== 6) td.style.display = 'none';
-              });
-            });
-            break;
-            
-          // 슈퍼관리자와 결제관리자는 모든 컬럼 보임
-          case '슈퍼관리자':
-          case '결제관리자':
-            ths.forEach(th => th.style.display = '');
-            tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-            break;
+          }
         }
+        // 발주 목록 컬럼 노출 제어 (디자인관리자: 제품명, 색상만)
+        const purchaseTable = document.querySelector('#purchaseList')?.closest('table');
+        if (purchaseTable) {
+          const ths = purchaseTable.querySelectorAll('thead th');
+          const tds = purchaseTable.querySelectorAll('tbody tr');
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+          if (role === '디자인관리자') {
+            ths.forEach((th, i) => {
+              if (i !== 3 && i !== 4) th.style.display = 'none'; // 제품명(3), 색상(4)
+            });
+            tds.forEach(tr => {
+              Array.from(tr.children).forEach((td, i) => {
+                if (i !== 3 && i !== 4) td.style.display = 'none';
+              });
+            });
+          }
+        }
+        // 디자인 목록은 디자인관리자에게 전체 노출(기존대로)
       }, 100);
     }
 
