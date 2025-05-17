@@ -2,28 +2,18 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>유니폼 운영 시스템 - CRUD</title>
+  <title>주문-발주 연동 CRUD</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // supabase 변수명 중복 방지: window.supabase로 접근
     const sb = window.supabase.createClient(
       'https://pebyrncdfrbgwhgkagtk.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlYnlybmNkZnJiZ3doZ2thZ3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0NzM1NzMsImV4cCI6MjA2MzA0OTU3M30.C_OW_XKunWMulydwOs-Tb5xEU2rxYPLFfubIJsh39Ew'
     );
 
-    // 탭 전환
-    function showTab(tab) {
-      document.querySelectorAll('.tab').forEach(el => el.style.display = 'none');
-      document.getElementById(tab).style.display = 'block';
-      if(tab==='orderTab') loadOrders();
-      if(tab==='purchaseTab') loadPurchases();
-      if(tab==='designTab') loadDesigns();
-    }
-
     // 주문 CRUD
     async function createOrder() {
       const orderId = generateOrderId();
-      const { data, error } = await sb.from('evOrder').insert([{
+      const { error } = await sb.from('evOrder').insert([{
         orderId,
         orderDate: document.getElementById('orderDate').value,
         groupName: document.getElementById('groupName').value,
@@ -45,12 +35,14 @@
         String(d.getDate()).padStart(2,'0') + 
         Math.floor(Math.random()*10000).toString().padStart(4,'0');
     }
+
+    // 주문 목록 + 발주 버튼
     async function loadOrders() {
       const { data, error } = await sb.from('evOrder').select('*').order('createdAt', { ascending: false });
       const tbody = document.getElementById('orderList');
       tbody.innerHTML = '';
       if (error) {
-        tbody.innerHTML = '<tr><td colspan="6">불러오기 실패: '+error.message+'</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">불러오기 실패: '+error.message+'</td></tr>';
         return;
       }
       data.forEach(o => {
@@ -62,8 +54,22 @@
             <td>${o.managerPhone}</td>
             <td>${o.totalPrice}</td>
             <td>
+              <button onclick="showPurchaseForm('${o.orderId}')">발주</button>
+              <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
+            </td>
+            <td>
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
+            </td>
+          </tr>
+          <tr id="purchase-form-row-${o.orderId}" style="display:none;">
+            <td colspan="7">
+              <div id="purchaseFormDiv-${o.orderId}"></div>
+            </td>
+          </tr>
+          <tr id="purchase-list-row-${o.orderId}" style="display:none;">
+            <td colspan="7">
+              <div id="purchaseListDiv-${o.orderId}"></div>
             </td>
           </tr>
         `;
@@ -83,24 +89,41 @@
       else loadOrders();
     }
 
-    // 발주 CRUD
-    async function createPurchase() {
+    // 발주 폼 표시
+    function showPurchaseForm(orderId) {
+      document.querySelectorAll('[id^=purchase-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('purchase-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('purchaseFormDiv-' + orderId);
+      div.innerHTML = `
+        <b>발주 등록 (주문번호: ${orderId})</b><br>
+        <input id="itemName-${orderId}" placeholder="제품명">
+        <input id="itemCode-${orderId}" placeholder="제품코드">
+        <input id="color-${orderId}" placeholder="색상">
+        <input id="managerName-${orderId}" placeholder="담당자명">
+        <input id="totalQuantity-${orderId}" placeholder="총수량">
+        <button onclick="createPurchase('${orderId}')">발주 등록</button>
+      `;
+    }
+
+    // 발주 등록 (주문번호 자동 연결)
+    async function createPurchase(orderId) {
       const purchaseId = generatePurchaseId();
-      const { data, error } = await sb.from('evPurchase').insert([{
+      const { error } = await sb.from('evPurchase').insert([{
         purchaseId,
-        orderId: document.getElementById('purchaseOrderId').value,
-        groupName: document.getElementById('purchaseGroupName').value,
-        itemName: document.getElementById('itemName').value,
-        itemCode: document.getElementById('itemCode').value,
-        color: document.getElementById('color').value,
-        managerName: document.getElementById('purchaseManagerName').value,
-        totalQuantity: parseInt(document.getElementById('purchaseTotalQuantity').value) || 0,
+        orderId,
+        groupName: '', // 필요시 주문에서 불러와서 자동입력 가능
+        itemName: document.getElementById('itemName-' + orderId).value,
+        itemCode: document.getElementById('itemCode-' + orderId).value,
+        color: document.getElementById('color-' + orderId).value,
+        managerName: document.getElementById('managerName-' + orderId).value,
+        totalQuantity: parseInt(document.getElementById('totalQuantity-' + orderId).value) || 0,
         purchaseStatus: '발주전'
       }]);
       if (error) alert('발주 등록 실패: ' + error.message);
       else {
         alert('발주 등록 성공');
-        loadPurchases();
+        togglePurchaseList(orderId, true);
       }
     }
     function generatePurchaseId() {
@@ -110,159 +133,65 @@
         String(d.getDate()).padStart(2,'0') + 
         '_PUR' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
     }
-    async function loadPurchases() {
-      const { data, error } = await sb.from('evPurchase').select('*').order('createdAt', { ascending: false });
-      const tbody = document.getElementById('purchaseList');
-      tbody.innerHTML = '';
-      if (error) {
-        tbody.innerHTML = '<tr><td colspan="6">불러오기 실패: '+error.message+'</td></tr>';
-        return;
+
+    // 발주 목록 표시/토글
+    async function togglePurchaseList(orderId, forceOpen) {
+      const row = document.getElementById('purchase-list-row-' + orderId);
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evPurchase').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const div = document.getElementById('purchaseListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+          return;
+        }
+        if (!data.length) {
+          div.innerHTML = '등록된 발주가 없습니다.';
+          return;
+        }
+        div.innerHTML = '<b>발주 목록</b><br><table border="1"><tr><th>발주번호</th><th>제품명</th><th>총수량</th><th>관리</th></tr>' +
+          data.map(p => `
+            <tr>
+              <td>${p.purchaseId}</td>
+              <td>${p.itemName}</td>
+              <td>${p.totalQuantity}</td>
+              <td>
+                <button onclick="editPurchasePrompt('${p.purchaseId}','${orderId}')">수정</button>
+                <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
+              </td>
+            </tr>
+          `).join('') + '</table>';
       }
-      data.forEach(p => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${p.purchaseId}</td>
-            <td>${p.orderId}</td>
-            <td>${p.groupName}</td>
-            <td>${p.itemName}</td>
-            <td>${p.totalQuantity}</td>
-            <td>
-              <button onclick="editPurchasePrompt('${p.purchaseId}')">수정</button>
-              <button onclick="deletePurchase('${p.purchaseId}')">삭제</button>
-            </td>
-          </tr>
-        `;
-      });
     }
-    async function deletePurchase(purchaseId) {
+    async function deletePurchase(purchaseId, orderId) {
       if (!confirm('정말 삭제?')) return;
       const { error } = await sb.from('evPurchase').delete().eq('purchaseId', purchaseId);
       if (error) alert('삭제 실패: ' + error.message);
-      else loadPurchases();
+      else togglePurchaseList(orderId, true);
     }
-    async function editPurchasePrompt(purchaseId) {
+    async function editPurchasePrompt(purchaseId, orderId) {
       const newName = prompt('새 제품명 입력');
       if (!newName) return;
       const { error } = await sb.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
       if (error) alert('수정 실패: ' + error.message);
-      else loadPurchases();
+      else togglePurchaseList(orderId, true);
     }
 
-    // 디자인 CRUD
-    async function createDesign() {
-      const designId = generateDesignId();
-      const { data, error } = await sb.from('evDesign').insert([{
-        designId,
-        orderId: document.getElementById('designOrderId').value,
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        driveLink: document.getElementById('driveLink').value,
-        createdBy: document.getElementById('createdBy').value,
-        designStatus: '착수전'
-      }]);
-      if (error) alert('디자인 등록 실패: ' + error.message);
-      else {
-        alert('디자인 등록 성공');
-        loadDesigns();
-      }
-    }
-    function generateDesignId() {
-      const d = new Date();
-      return d.getFullYear().toString() + 
-        String(d.getMonth()+1).padStart(2,'0') + 
-        String(d.getDate()).padStart(2,'0') + 
-        '_DES' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
-    }
-    async function loadDesigns() {
-      const { data, error } = await sb.from('evDesign').select('*').order('createdAt', { ascending: false });
-      const tbody = document.getElementById('designList');
-      tbody.innerHTML = '';
-      if (error) {
-        tbody.innerHTML = '<tr><td colspan="6">불러오기 실패: '+error.message+'</td></tr>';
-        return;
-      }
-      data.forEach(d => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${d.designId}</td>
-            <td>${d.orderId}</td>
-            <td>${d.title}</td>
-            <td>${d.createdBy}</td>
-            <td>
-              <button onclick="editDesignPrompt('${d.designId}')">수정</button>
-              <button onclick="deleteDesign('${d.designId}')">삭제</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-    async function deleteDesign(designId) {
-      if (!confirm('정말 삭제?')) return;
-      const { error } = await sb.from('evDesign').delete().eq('designId', designId);
-      if (error) alert('삭제 실패: ' + error.message);
-      else loadDesigns();
-    }
-    async function editDesignPrompt(designId) {
-      const newTitle = prompt('새 디자인 제목 입력');
-      if (!newTitle) return;
-      const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
-      if (error) alert('수정 실패: ' + error.message);
-      else loadDesigns();
-    }
-
-    window.onload = () => showTab('orderTab');
+    window.onload = loadOrders;
   </script>
 </head>
 <body>
-  <button onclick="showTab('orderTab')">주문관리</button>
-  <button onclick="showTab('purchaseTab')">발주관리</button>
-  <button onclick="showTab('designTab')">디자인관리</button>
-
-  <!-- 주문관리 -->
-  <div id="orderTab" class="tab" style="display:none;">
-    <h2>주문 등록</h2>
-    <input id="orderDate" type="date" value="2024-05-20">
-    <input id="groupName" placeholder="단체명">
-    <input id="managerName" placeholder="담당자명">
-    <input id="managerPhone" placeholder="담당자연락처">
-    <input id="totalPrice" placeholder="총금액">
-    <button onclick="createOrder()">등록</button>
-    <h3>주문 목록</h3>
-    <table border="1"><thead>
-      <tr><th>주문번호</th><th>단체명</th><th>담당자</th><th>연락처</th><th>총금액</th><th>관리</th></tr>
-    </thead><tbody id="orderList"></tbody></table>
-  </div>
-
-  <!-- 발주관리 -->
-  <div id="purchaseTab" class="tab" style="display:none;">
-    <h2>발주 등록</h2>
-    <input id="purchaseOrderId" placeholder="주문번호">
-    <input id="purchaseGroupName" placeholder="단체명">
-    <input id="itemName" placeholder="제품명">
-    <input id="itemCode" placeholder="제품코드">
-    <input id="color" placeholder="색상">
-    <input id="purchaseManagerName" placeholder="담당자명">
-    <input id="purchaseTotalQuantity" placeholder="총수량">
-    <button onclick="createPurchase()">등록</button>
-    <h3>발주 목록</h3>
-    <table border="1"><thead>
-      <tr><th>발주번호</th><th>주문번호</th><th>단체명</th><th>제품명</th><th>총수량</th><th>관리</th></tr>
-    </thead><tbody id="purchaseList"></tbody></table>
-  </div>
-
-  <!-- 디자인관리 -->
-  <div id="designTab" class="tab" style="display:none;">
-    <h2>디자인 등록</h2>
-    <input id="designOrderId" placeholder="주문번호">
-    <input id="title" placeholder="디자인 제목">
-    <input id="description" placeholder="설명">
-    <input id="driveLink" placeholder="구글드라이브 링크">
-    <input id="createdBy" placeholder="작성자">
-    <button onclick="createDesign()">등록</button>
-    <h3>디자인 목록</h3>
-    <table border="1"><thead>
-      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
-    </thead><tbody id="designList"></tbody></table>
-  </div>
+  <h2>주문 등록</h2>
+  <input id="orderDate" type="date" value="2024-05-20">
+  <input id="groupName" placeholder="단체명">
+  <input id="managerName" placeholder="담당자명">
+  <input id="managerPhone" placeholder="담당자연락처">
+  <input id="totalPrice" placeholder="총금액">
+  <button onclick="createOrder()">등록</button>
+  <h3>주문 목록</h3>
+  <table border="1"><thead>
+    <tr><th>주문번호</th><th>단체명</th><th>담당자</th><th>연락처</th><th>총금액</th><th>발주</th><th>관리</th></tr>
+  </thead><tbody id="orderList"></tbody></table>
 </body>
 </html>
