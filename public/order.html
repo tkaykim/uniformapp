@@ -10,20 +10,95 @@
       background: #f7f9fb;
       color: #222;
       margin: 0;
-      padding: 0 0 40px 0;
+      padding: 0;
     }
-    h2, h3 {
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1.5px solid #e3e8f0;
+      box-shadow: 2px 0 16px 0 #e3e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 32px 0 0 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 10;
+    }
+    .sidebar .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2563eb;
+      margin-left: 32px;
+      margin-bottom: 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar .logo i {
+      font-size: 22px;
+    }
+    .sidebar .nav {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sidebar .nav-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #222;
+      font-size: 16px;
+      text-align: left;
+      padding: 12px 32px;
+      border-radius: 0 18px 18px 0;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar .nav-btn.selected, .sidebar .nav-btn:hover {
+      background: #eaf2ff;
+      color: #2563eb;
       font-weight: 600;
-      margin-top: 32px;
-      margin-bottom: 12px;
     }
-    .main-wrap {
-      max-width: 1200px;
-      margin: 30px auto 0 auto;
+    .main-area {
+      flex: 1;
+      margin-left: 220px;
+      min-height: 100vh;
+      background: #f7f9fb;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 40px 0 40px;
+    }
+    .topbar-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #222;
+    }
+    .topbar-date {
+      color: #888;
+      font-size: 15px;
+      margin-left: 18px;
+    }
+    .topbar-action {
+      margin-left: auto;
+    }
+    .card {
       background: #fff;
       border-radius: 18px;
       box-shadow: 0 4px 24px 0 #e3e8f0;
       padding: 32px 36px 36px 36px;
+      margin: 32px 40px 0 40px;
     }
     .input-row {
       display: flex;
@@ -47,7 +122,7 @@
       background: #f0f6ff;
     }
     .input-row button {
-      background: #2a6cff;
+      background: #2563eb;
       color: #fff;
       border: none;
       border-radius: 7px;
@@ -59,7 +134,7 @@
       transition: background 0.18s;
     }
     .input-row button:hover {
-      background: #1a4fb7;
+      background: #1746a2;
     }
     table {
       width: 100%;
@@ -73,7 +148,7 @@
     }
     thead th {
       background: #f0f6ff;
-      color: #1a4fb7;
+      color: #2563eb;
       font-weight: 600;
       padding: 12px 8px;
       border-bottom: 2px solid #e3e8f0;
@@ -127,8 +202,8 @@
     }
     .role-btns button {
       background: #fff;
-      color: #2a6cff;
-      border: 1.5px solid #2a6cff;
+      color: #2563eb;
+      border: 1.5px solid #2563eb;
       border-radius: 7px;
       padding: 7px 18px;
       font-size: 15px;
@@ -138,7 +213,7 @@
       transition: background 0.18s, color 0.18s;
     }
     .role-btns button:hover, .role-btns button.selected {
-      background: #2a6cff;
+      background: #2563eb;
       color: #fff;
     }
   </style>
@@ -1445,63 +1520,66 @@
   </script>
 </head>
 <body>
-  <div class="main-wrap">
-    <div class="role-btns">
-      <b>권한 선택(테스트용):</b>
-      <button onclick="setRole('슈퍼관리자')">슈퍼관리자</button>
-      <button onclick="setRole('중간관리자')">중간관리자</button>
-      <button onclick="setRole('결제관리자')">결제관리자</button>
-      <button onclick="setRole('디자인관리자')">디자인관리자</button>
-    </div>
-    <h2>주문 등록</h2>
-    <div class="input-row">
-      <input id="orderDate" type="date" value="2024-05-20">
-      <input id="groupName" placeholder="단체명">
-      <input id="representativeName" placeholder="대표자명">
-      <input id="representativePhone" placeholder="대표자연락처">
-      <input id="managerName" placeholder="담당자명">
-      <input id="totalPrice" placeholder="총금액">
-      <button onclick="createOrder()">등록</button>
-    </div>
-    <h3>주문 목록</h3>
-    <table border="1"><thead>
-      <tr>
-        <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
-        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th>
-      </tr>
-    </thead><tbody id="orderList"></tbody></table>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="logo"><i>👕</i> 모두의 유니폼 운영<br>시스템</div>
+      <nav class="nav">
+        <button class="nav-btn selected">🛒 주문 관리</button>
+        <button class="nav-btn">📦 발주 관리</button>
+        <button class="nav-btn">🎨 디자인 관리</button>
+        <button class="nav-btn">🖨 인쇄 관리</button>
+      </nav>
+    </aside>
+    <main class="main-area">
+      <div class="topbar">
+        <div class="topbar-title">주문 관리</div>
+        <div class="topbar-date" id="todayDate"></div>
+        <div class="topbar-action">
+          <button style="background:#2563eb;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;font-size:15px;box-shadow:0 2px 8px 0 #e3e8f0;border:none;cursor:pointer;">+ 새 주문 등록</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="role-btns">
+          <b>권한 선택(테스트용):</b>
+          <button onclick="setRole('슈퍼관리자')">슈퍼관리자</button>
+          <button onclick="setRole('중간관리자')">중간관리자</button>
+          <button onclick="setRole('결제관리자')">결제관리자</button>
+          <button onclick="setRole('디자인관리자')">디자인관리자</button>
+        </div>
+        <h2 style="margin-top:0;">주문 등록</h2>
+        <div class="input-row">
+          <input id="orderDate" type="date" value="2024-05-20">
+          <input id="groupName" placeholder="단체명">
+          <input id="representativeName" placeholder="대표자명">
+          <input id="representativePhone" placeholder="대표자연락처">
+          <input id="managerName" placeholder="담당자명">
+          <input id="totalPrice" placeholder="총금액">
+          <button onclick="createOrder()">등록</button>
+        </div>
+        <h3>주문 목록</h3>
+        <table border="1"><thead>
+          <tr>
+            <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
+            <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th>
+          </tr>
+        </thead><tbody id="orderList"></tbody></table>
+      </div>
+    </main>
   </div>
-
-  <!-- 발주관리 -->
-  <div id="purchaseTab" class="tab" style="display:none;">
-    <h2>발주 등록</h2>
-    <input id="purchaseOrderId" placeholder="주문번호">
-    <input id="purchaseGroupName" placeholder="단체명">
-    <input id="itemName" placeholder="제품명">
-    <input id="itemCode" placeholder="제품코드">
-    <input id="color" placeholder="색상">
-    <input id="purchaseManagerName" placeholder="담당자명">
-    <input id="purchaseTotalQuantity" placeholder="총수량">
-    <button onclick="createPurchase()">등록</button>
-    <h3>발주 목록</h3>
-    <table border="1"><thead>
-      <tr><th>발주번호</th><th>주문번호</th><th>단체명</th><th>제품명</th><th>총수량</th><th>관리</th></tr>
-    </thead><tbody id="purchaseList"></tbody></table>
-  </div>
-
-  <!-- 디자인관리 -->
-  <div id="designTab" class="tab" style="display:none;">
-    <h2>디자인 등록</h2>
-    <input id="designOrderId" placeholder="주문번호">
-    <input id="title" placeholder="디자인 제목">
-    <input id="description" placeholder="설명">
-    <input id="driveLink" placeholder="구글드라이브 링크">
-    <input id="createdBy" placeholder="작성자">
-    <button onclick="createDesign()">등록</button>
-    <h3>디자인 목록</h3>
-    <table border="1"><thead>
-      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
-    </thead><tbody id="designList"></tbody></table>
-  </div>
+  <script>
+    // 오늘 날짜 표시
+    function setTodayDate() {
+      const now = new Date();
+      const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      const y = kst.getFullYear();
+      const m = String(kst.getMonth()+1).padStart(2,'0');
+      const d = String(kst.getDate()).padStart(2,'0');
+      const day = ['일','월','화','수','목','금','토'][kst.getDay()];
+      const h = kst.getHours();
+      const min = String(kst.getMinutes()).padStart(2,'0');
+      document.getElementById('todayDate').textContent = `${y}년 ${m}월 ${d}일 ${day}요일 AM ${h}:${min}`;
+    }
+    setTodayDate();
+  </script>
 </body>
 </html>
