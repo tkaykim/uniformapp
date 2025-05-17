@@ -53,8 +53,9 @@
         orderId,
         orderDate: document.getElementById('orderDate').value,
         groupName: document.getElementById('groupName').value,
+        representativeName: document.getElementById('representativeName').value,
+        representativePhone: document.getElementById('representativePhone').value,
         managerName: document.getElementById('managerName').value,
-        managerPhone: document.getElementById('managerPhone').value,
         totalPrice: parseInt(document.getElementById('totalPrice').value) || 0,
         orderStatus: '주문접수'
       }]);
@@ -87,10 +88,13 @@
             <td>${o.orderId}
               <button onclick="expandAll('${o.orderId}')" style="font-size:11px;">모두 펼치기</button>
               <button onclick="collapseAll('${o.orderId}')" style="font-size:11px;">모두 접기</button>
+              <button onclick="editOrder('${o.orderId}')" style="font-size:11px;">수정</button>
+              <button onclick="deleteOrder('${o.orderId}')" style="font-size:11px;">삭제</button>
             </td>
             <td>${o.groupName}</td>
-            <td>${o.managerName}</td>
-            <td>${o.managerPhone}</td>
+            <td>${o.representativeName || ''}</td>
+            <td>${o.representativePhone || ''}</td>
+            <td>${o.managerName || ''}</td>
             <td>${o.totalPrice}</td>
             <td>
               <button onclick="showPurchaseForm('${o.orderId}')">발주 추가</button>
@@ -172,17 +176,63 @@
       });
     }
     async function deleteOrder(orderId) {
-      if (!confirm('정말 삭제?')) return;
-      const { error } = await sb.from('evOrder').delete().eq('orderId', orderId);
-      if (error) alert('삭제 실패: ' + error.message);
-      else loadOrders();
+      if (!confirm('정말 이 주문을 삭제하시겠습니까?\n연관된 발주, 디자인, 인쇄, 배송 데이터는 유지됩니다.')) return;
+
+      const { error } = await sb.from('evOrder')
+        .delete()
+        .eq('orderId', orderId);
+
+      if (error) {
+        alert('주문 삭제 실패: ' + error.message);
+        return;
+      }
+
+      alert('주문 삭제 완료');
+      loadOrders();
     }
-    async function editOrderPrompt(orderId) {
-      const newName = prompt('새 단체명 입력');
-      if (!newName) return;
-      const { error } = await sb.from('evOrder').update({ groupName: newName }).eq('orderId', orderId);
-      if (error) alert('수정 실패: ' + error.message);
-      else loadOrders();
+    async function editOrder(orderId) {
+      const { data, error } = await sb.from('evOrder')
+        .select('*')
+        .eq('orderId', orderId)
+        .single();
+      
+      if (error) {
+        alert('주문 정보 조회 실패: ' + error.message);
+        return;
+      }
+
+      const newGroupName = prompt('단체명', data.groupName);
+      if (!newGroupName) return;
+      
+      const newRepresentativeName = prompt('대표자명', data.representativeName);
+      if (!newRepresentativeName) return;
+      
+      const newRepresentativePhone = prompt('대표자연락처', data.representativePhone);
+      if (!newRepresentativePhone) return;
+      
+      const newManagerName = prompt('담당자명', data.managerName);
+      if (!newManagerName) return;
+      
+      const newTotalPrice = prompt('총금액', data.totalPrice);
+      if (!newTotalPrice) return;
+
+      const { error: updateError } = await sb.from('evOrder')
+        .update({
+          groupName: newGroupName,
+          representativeName: newRepresentativeName,
+          representativePhone: newRepresentativePhone,
+          managerName: newManagerName,
+          totalPrice: parseInt(newTotalPrice) || 0
+        })
+        .eq('orderId', orderId);
+
+      if (updateError) {
+        alert('주문 수정 실패: ' + updateError.message);
+        return;
+      }
+
+      alert('주문 수정 완료');
+      loadOrders();
     }
 
     // 발주 CRUD
@@ -1095,7 +1145,7 @@
         alert('수정 실패: ' + error.message);
         return;
       }
-
+      
       alert('수정 완료');
       toggleDeliveryList(orderId, true);
     }
@@ -1310,14 +1360,15 @@
     <h2>주문 등록</h2>
     <input id="orderDate" type="date" value="2024-05-20">
     <input id="groupName" placeholder="단체명">
+    <input id="representativeName" placeholder="대표자명">
+    <input id="representativePhone" placeholder="대표자연락처">
     <input id="managerName" placeholder="담당자명">
-    <input id="managerPhone" placeholder="담당자연락처">
     <input id="totalPrice" placeholder="총금액">
     <button onclick="createOrder()">등록</button>
     <h3>주문 목록</h3>
     <table border="1"><thead>
       <tr>
-        <th>주문번호</th><th>단체명</th><th>담당자</th><th>연락처</th><th>총금액</th>
+        <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
         <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>관리</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
