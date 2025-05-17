@@ -90,16 +90,16 @@
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
             </td>
-                  </tr>
+          </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
@@ -388,15 +388,15 @@
                     <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
                     <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
                     <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
+                  </select>
+                </td>
                 ${sizes.map(k => `<td><span class="editable" data-field="${k}">${p[k] || 0}</span></td>`).join('')}
                 <td>
                   <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')" id="edit-btn-${p.purchaseId}">수정</button>
                   <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
                   <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
+                </td>
+              </tr>
             `).join('')}
           </table>
         `;
@@ -508,8 +508,8 @@
                   <button onclick="togglePrintEdit('${p.printId}', '${orderId}')" id="edit-btn-${p.printId}">수정</button>
                   <button onclick="savePrintEdit('${p.printId}', '${orderId}')" style="display:none" id="save-btn-${p.printId}">저장</button>
                   <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
+                </td>
+              </tr>
             `).join('')}
           </table>
         `;
@@ -576,8 +576,8 @@
         const div = document.getElementById('deliveryListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
-        return;
-      }
+          return;
+        }
         if (!data.length) {
           div.innerHTML = '등록된 배송이 없습니다.';
           return;
@@ -609,14 +609,14 @@
                     <option value="배송전" ${d.deliveryStatus === '배송전' ? 'selected' : ''}>배송전</option>
                     <option value="진행중" ${d.deliveryStatus === '진행중' ? 'selected' : ''}>진행중</option>
                     <option value="완료" ${d.deliveryStatus === '완료' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
+                  </select>
+                </td>
                 <td>
                   <button onclick="toggleDeliveryEdit('${d.deliveryId}', '${orderId}')" id="edit-btn-${d.deliveryId}">수정</button>
                   <button onclick="saveDeliveryEdit('${d.deliveryId}', '${orderId}')" style="display:none" id="save-btn-${d.deliveryId}">저장</button>
                   <button onclick="deleteDelivery('${d.deliveryId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
+                </td>
+              </tr>
             `).join('')}
           </table>
         `;
@@ -680,8 +680,8 @@
         const div = document.getElementById('designListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
-        return;
-      }
+          return;
+        }
         if (!data.length) {
           div.innerHTML = '등록된 디자인이 없습니다.';
           return;
@@ -711,14 +711,14 @@
                     <option value="착수전" ${d.designStatus === '착수전' ? 'selected' : ''}>착수전</option>
                     <option value="진행중" ${d.designStatus === '진행중' ? 'selected' : ''}>진행중</option>
                     <option value="완료" ${d.designStatus === '완료' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
+                  </select>
+                </td>
                 <td>
                   <button onclick="toggleDesignEdit('${d.designId}', '${orderId}')" id="edit-btn-${d.designId}">수정</button>
                   <button onclick="saveDesignEdit('${d.designId}', '${orderId}')" style="display:none" id="save-btn-${d.designId}">저장</button>
                   <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
+                </td>
+              </tr>
             `).join('')}
           </table>
         `;
@@ -990,7 +990,7 @@
         alert('수정 실패: ' + error.message);
         return;
       }
-      
+
       alert('수정 완료');
       toggleDesignList(orderId, true);
     }
@@ -1058,52 +1058,6 @@
       document.getElementById('design-list-row-' + orderId).style.display = 'none';
       document.getElementById('print-list-row-' + orderId).style.display = 'none';
       document.getElementById('delivery-list-row-' + orderId).style.display = 'none';
-    }
-
-    // 발주 상태 변경 (select에서 호출)
-    async function updatePurchaseStatus(orderId, purchaseId, newStatus) {
-      const { error } = await sb.from('evPurchase')
-        .update({ purchaseStatus: newStatus })
-        .eq('purchaseId', purchaseId);
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
-      }
-      // 상태 span 즉시 갱신
-      await updatePurchaseStatus(orderId);
-    }
-    // 디자인 상태 변경 (select에서 호출)
-    async function updateDesignStatus(orderId, designId, newStatus) {
-      const { error } = await sb.from('evDesign')
-        .update({ designStatus: newStatus })
-        .eq('designId', designId);
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
-      }
-      await updateDesignStatus(orderId);
-    }
-    // 인쇄 상태 변경 (select에서 호출)
-    async function updatePrintStatus(orderId, printId, newStatus) {
-      const { error } = await sb.from('evPrint')
-        .update({ printStatus: newStatus })
-        .eq('printId', printId);
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
-      }
-      await updatePrintStatus(orderId);
-    }
-    // 배송 상태 변경 (select에서 호출)
-    async function updateDeliveryStatus(orderId, deliveryId, newStatus) {
-      const { error } = await sb.from('evDelivery')
-        .update({ deliveryStatus: newStatus })
-        .eq('deliveryId', deliveryId);
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
-      }
-      await updateDeliveryStatus(orderId);
     }
 
     window.onload = () => showTab('orderTab');
