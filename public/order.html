@@ -126,16 +126,16 @@
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
-          </tr>
+                  </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
@@ -1210,8 +1210,8 @@
 
     // 권한별 탭/섹션 노출 정의
     const tabPermissions = {
-      '슈퍼관리자': ['orderTab','purchaseTab','designTab','printTab','deliveryTab','costTab'],
-      '중간관리자': ['orderTab','purchaseTab','designTab','costTab'],
+      '슈퍼관리자': ['orderTab'],
+      '중간관리자': ['orderTab'],
       '결제관리자': ['orderTab','costTab'],
       '디자인관리자': ['designTab']
     };
