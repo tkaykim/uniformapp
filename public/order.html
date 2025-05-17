@@ -126,16 +126,16 @@
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
-                  </tr>
+          </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
@@ -1255,13 +1255,13 @@
         // 권한별로 숨길 컬럼 설정
         switch(role) {
           case '중간관리자':
-            // 주문번호, 단체명, 대표자명, 연락처, 매출총금액만 보이게
+            // 지출(비용) 관련 컬럼만 숨김 (마지막 컬럼)
             ths.forEach((th, i) => {
-              if (i > 4) th.style.display = 'none';
+              if (i === 9) th.style.display = 'none'; // 관리(비용) 컬럼 숨김
             });
             tds.forEach(tr => {
               Array.from(tr.children).forEach((td, i) => {
-                if (i > 4) td.style.display = 'none';
+                if (i === 9) td.style.display = 'none'; // 관리(비용) 컬럼 숨김
               });
             });
             break;
