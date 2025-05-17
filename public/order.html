@@ -341,7 +341,6 @@
           return;
         }
 
-        // 사이즈 목록
         const sizes = [
           "size_110","size_120","size_130","size_140","size_150","size_160",
           "size_XS","size_SS","size_S","size_M","size_L","size_XL",
@@ -349,7 +348,6 @@
           "size_3L","size_4L","size_5L","size_free","size_custom"
         ];
 
-        // 사이즈 헤더 생성
         const sizeHeaders = sizes.map(k => `<th>${k.replace('size_','').toUpperCase()}</th>`).join('');
 
         div.innerHTML = `
@@ -369,11 +367,11 @@
             ${data.map(p => `
               <tr id="purchase-row-${p.purchaseId}">
                 <td>${p.purchaseId}</td>
-                <td class="editable" data-field="itemName">${p.itemName}</td>
-                <td class="editable" data-field="itemCode">${p.itemCode}</td>
-                <td class="editable" data-field="color">${p.color}</td>
-                <td class="editable" data-field="managerName">${p.managerName}</td>
-                <td>${p.totalQuantity}</td>
+                <td><span class="editable" data-field="itemName">${p.itemName}</span></td>
+                <td><span class="editable" data-field="itemCode">${p.itemCode}</span></td>
+                <td><span class="editable" data-field="color">${p.color}</span></td>
+                <td><span class="editable" data-field="managerName">${p.managerName}</span></td>
+                <td><span class="total-quantity">${p.totalQuantity}</span></td>
                 <td>
                   <select onchange="updatePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
                           style="color: ${getStatusColor(p.purchaseStatus)}">
@@ -382,9 +380,9 @@
                     <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
                   </select>
                 </td>
-                ${sizes.map(k => `<td>${p[k] || 0}</td>`).join('')}
+                ${sizes.map(k => `<td><span class="editable" data-field="${k}">${p[k] || 0}</span></td>`).join('')}
                 <td>
-                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')">수정</button>
+                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')" id="edit-btn-${p.purchaseId}">수정</button>
                   <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
                   <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
                 </td>
@@ -783,32 +781,28 @@
     // 발주 수정 모드 토글
     function togglePurchaseEdit(purchaseId, orderId) {
       const row = document.getElementById('purchase-row-' + purchaseId);
-      const editableCells = row.querySelectorAll('.editable');
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + purchaseId);
       const saveBtn = document.getElementById('save-btn-' + purchaseId);
       
-      editableCells.forEach(cell => {
-        const currentValue = cell.textContent;
-        const field = cell.getAttribute('data-field');
-        cell.innerHTML = `<input type="text" value="${currentValue}" id="edit-${field}-${purchaseId}">`;
-      });
-
-      // 사이즈별 수량 입력 필드 추가
-      const sizes = [
-        "size_110","size_120","size_130","size_140","size_150","size_160",
-        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
-        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
-        "size_3L","size_4L","size_5L","size_free","size_custom"
-      ];
-
-      sizes.forEach((size, index) => {
-        const sizeCell = row.children[7 + index]; // 7은 기본 필드 수
-        const currentValue = sizeCell.textContent;
-        sizeCell.innerHTML = `<input type="number" value="${currentValue}" 
-                                 id="edit-${size}-${purchaseId}" 
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        if (field.startsWith('size_')) {
+          // 사이즈별 수량 필드
+          span.innerHTML = `<input type="number" value="${currentValue}" 
+                                 id="edit-${field}-${purchaseId}" 
                                  onchange="updateEditTotalQuantity('${purchaseId}')" 
                                  min="0" style="width:50px">`;
+        } else {
+          // 일반 텍스트 필드
+          span.innerHTML = `<input type="text" value="${currentValue}" 
+                                 id="edit-${field}-${purchaseId}" 
+                                 style="width:100%">`;
+        }
       });
 
+      editBtn.style.display = 'none';
       saveBtn.style.display = 'inline';
     }
 
@@ -826,7 +820,7 @@
         total += value;
       });
       const row = document.getElementById('purchase-row-' + purchaseId);
-      row.children[5].textContent = total; // 총수량 셀 업데이트
+      row.querySelector('.total-quantity').textContent = total;
     }
 
     // 발주 수정 저장
