@@ -67,22 +67,22 @@
             <td>${o.managerPhone}</td>
             <td>${o.totalPrice}</td>
             <td>
-              <button onclick="showPurchaseForm('${o.orderId}')">발주</button>
+              <button onclick="showPurchaseForm('${o.orderId}')">발주 추가</button>
               <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
               <span id="purchaseStatus-${o.orderId}">-</span>
             </td>
             <td>
-              <button onclick="showDesignForm('${o.orderId}')">디자인</button>
+              <button onclick="showDesignForm('${o.orderId}')">디자인 추가</button>
               <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
               <span id="designStatus-${o.orderId}">-</span>
             </td>
             <td>
-              <button onclick="showPrintForm('${o.orderId}')">인쇄</button>
+              <button onclick="showPrintForm('${o.orderId}')">인쇄 추가</button>
               <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
               <span id="printStatus-${o.orderId}">-</span>
             </td>
             <td>
-              <button onclick="showDeliveryForm('${o.orderId}')">배송</button>
+              <button onclick="showDeliveryForm('${o.orderId}')">배송 추가</button>
               <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
               <span id="deliveryStatus-${o.orderId}">-</span>
             </td>
@@ -90,16 +90,16 @@
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
             </td>
-                  </tr>
+          </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
