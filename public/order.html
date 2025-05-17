@@ -1226,9 +1226,9 @@
 
     // 권한별 탭/섹션 노출 정의
     const tabPermissions = {
-      '슈퍼관리자': ['orderTab'],
-      '중간관리자': ['orderTab'],
-      '결제관리자': ['orderTab','costTab'],
+      '슈퍼관리자': ['orderTab', 'purchaseTab', 'designTab'],
+      '중간관리자': ['orderTab', 'purchaseTab', 'designTab'],
+      '결제관리자': ['orderTab', 'purchaseTab', 'designTab'],
       '디자인관리자': ['designTab']
     };
     function setRole(role) {
@@ -1241,40 +1241,47 @@
       document.getElementById('orderTab').style.display = tabPermissions[role].includes('orderTab') ? '' : 'none';
       if (document.getElementById('purchaseTab')) document.getElementById('purchaseTab').style.display = tabPermissions[role].includes('purchaseTab') ? '' : 'none';
       if (document.getElementById('designTab')) document.getElementById('designTab').style.display = tabPermissions[role].includes('designTab') ? '' : 'none';
+
       // 주문 목록 컬럼/버튼 노출 제어
       setTimeout(() => {
         const orderTable = document.querySelector('#orderTab table');
         if (!orderTable) return;
-        const role = sessionStorage.getItem('role') || '슈퍼관리자';
-        // 헤더 처리
         const ths = orderTable.querySelectorAll('thead th');
         const tds = orderTable.querySelectorAll('tbody tr');
-        // 슈퍼관리자: 모두 보임
-        if (role === '슈퍼관리자') {
-          ths.forEach(th => th.style.display = '');
-          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+        
+        // 역할별 컬럼 인덱스 정의
+        let visibleIdx = [];
+        if (role === '슈퍼관리자' || role === '결제관리자') {
+          visibleIdx = Array.from({length: ths.length}, (_, i) => i); // 전체
+        } else if (role === '중간관리자') {
+          visibleIdx = [0,1,2,3,4]; // 주문번호, 단체명, 대표자명, 연락처, 매출총금액
+        } else if (role === '디자인관리자') {
+          visibleIdx = [0,6]; // 주문번호, 디자인파트
         }
-        // 중간관리자: 비용관리(마지막 td) 숨김
-        else if (role === '중간관리자') {
-          ths.forEach((th, i) => {
-            if (i === 10) th.style.display = 'none'; else th.style.display = '';
+
+        // 헤더와 셀 표시/숨김 처리
+        ths.forEach((th, i) => th.style.display = visibleIdx.includes(i) ? '' : 'none');
+        tds.forEach(tr => {
+          Array.from(tr.children).forEach((td, i) => {
+            td.style.display = visibleIdx.includes(i) ? '' : 'none';
           });
-          tds.forEach(tr => {
-            Array.from(tr.children).forEach((td, i) => {
-              if (i === 10) td.style.display = 'none'; else td.style.display = '';
+        });
+
+        // 디자인 목록 컬럼 제어 (디자인관리자용)
+        if (role === '디자인관리자') {
+          const designTable = document.querySelector('#designTab table');
+          if (designTable) {
+            const designThs = designTable.querySelectorAll('thead th');
+            const designTds = designTable.querySelectorAll('tbody tr');
+            const designVisibleIdx = [0,1,2,3,4]; // 디자인번호, 주문번호, 제목, 작성자, 관리
+
+            designThs.forEach((th, i) => th.style.display = designVisibleIdx.includes(i) ? '' : 'none');
+            designTds.forEach(tr => {
+              Array.from(tr.children).forEach((td, i) => {
+                td.style.display = designVisibleIdx.includes(i) ? '' : 'none';
+              });
             });
-          });
-        }
-        // 디자인관리자: 주문번호, 단체명, 담당자, 디자인파트만 보임(0,1,2,6번 td)
-        else if (role === '디자인관리자') {
-          ths.forEach((th, i) => {
-            if ([0,1,2,6].includes(i)) th.style.display = ''; else th.style.display = 'none';
-          });
-          tds.forEach(tr => {
-            Array.from(tr.children).forEach((td, i) => {
-              if ([0,1,2,6].includes(i)) td.style.display = ''; else td.style.display = 'none';
-            });
-          });
+          }
         }
       }, 100);
     }
