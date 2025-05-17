@@ -334,32 +334,64 @@
         const div = document.getElementById('purchaseListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
-        return;
-      }
+          return;
+        }
         if (!data.length) {
           div.innerHTML = '등록된 발주가 없습니다.';
           return;
         }
-        div.innerHTML = '<b>발주 목록</b><br><table border="1"><tr><th>발주번호</th><th>제품명</th><th>총수량</th><th>상태</th><th>관리</th></tr>' +
-          data.map(p => `
+
+        // 사이즈 목록
+        const sizes = [
+          "size_110","size_120","size_130","size_140","size_150","size_160",
+          "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+          "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+          "size_3L","size_4L","size_5L","size_free","size_custom"
+        ];
+
+        // 사이즈 헤더 생성
+        const sizeHeaders = sizes.map(k => `<th>${k.replace('size_','').toUpperCase()}</th>`).join('');
+
+        div.innerHTML = `
+          <b>발주 목록</b><br>
+          <table border="1">
             <tr>
-              <td>${p.purchaseId}</td>
-              <td>${p.itemName}</td>
-              <td>${p.totalQuantity}</td>
-              <td>
-                <select onchange="updatePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
-                        style="color: ${getStatusColor(p.purchaseStatus)}">
-                  <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                  <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                  <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
-              <td>
-                <button onclick="editPurchasePrompt('${p.purchaseId}','${orderId}')">수정</button>
-                <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
-          `).join('') + '</table>';
+              <th>발주번호</th>
+              <th>제품명</th>
+              <th>제품코드</th>
+              <th>색상</th>
+              <th>담당자</th>
+              <th>총수량</th>
+              <th>상태</th>
+              ${sizeHeaders}
+              <th>관리</th>
+            </tr>
+            ${data.map(p => `
+              <tr id="purchase-row-${p.purchaseId}">
+                <td>${p.purchaseId}</td>
+                <td class="editable" data-field="itemName">${p.itemName}</td>
+                <td class="editable" data-field="itemCode">${p.itemCode}</td>
+                <td class="editable" data-field="color">${p.color}</td>
+                <td class="editable" data-field="managerName">${p.managerName}</td>
+                <td>${p.totalQuantity}</td>
+                <td>
+                  <select onchange="updatePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
+                          style="color: ${getStatusColor(p.purchaseStatus)}">
+                    <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                ${sizes.map(k => `<td>${p[k] || 0}</td>`).join('')}
+                <td>
+                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')">수정</button>
+                  <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
+                  <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
       }
     }
     async function deletePurchase(purchaseId, orderId) {
@@ -746,6 +778,92 @@
         total += value;
       });
       document.getElementById('totalQuantity-' + orderId).value = total;
+    }
+
+    // 발주 수정 모드 토글
+    function togglePurchaseEdit(purchaseId, orderId) {
+      const row = document.getElementById('purchase-row-' + purchaseId);
+      const editableCells = row.querySelectorAll('.editable');
+      const saveBtn = document.getElementById('save-btn-' + purchaseId);
+      
+      editableCells.forEach(cell => {
+        const currentValue = cell.textContent;
+        const field = cell.getAttribute('data-field');
+        cell.innerHTML = `<input type="text" value="${currentValue}" id="edit-${field}-${purchaseId}">`;
+      });
+
+      // 사이즈별 수량 입력 필드 추가
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+
+      sizes.forEach((size, index) => {
+        const sizeCell = row.children[7 + index]; // 7은 기본 필드 수
+        const currentValue = sizeCell.textContent;
+        sizeCell.innerHTML = `<input type="number" value="${currentValue}" 
+                                 id="edit-${size}-${purchaseId}" 
+                                 onchange="updateEditTotalQuantity('${purchaseId}')" 
+                                 min="0" style="width:50px">`;
+      });
+
+      saveBtn.style.display = 'inline';
+    }
+
+    // 수정 중인 발주의 총 수량 업데이트
+    function updateEditTotalQuantity(purchaseId) {
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      let total = 0;
+      sizes.forEach(k => {
+        const value = parseInt(document.getElementById(`edit-${k}-${purchaseId}`).value) || 0;
+        total += value;
+      });
+      const row = document.getElementById('purchase-row-' + purchaseId);
+      row.children[5].textContent = total; // 총수량 셀 업데이트
+    }
+
+    // 발주 수정 저장
+    async function savePurchaseEdit(purchaseId, orderId) {
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+
+      const updateData = {
+        itemName: document.getElementById('edit-itemName-' + purchaseId).value,
+        itemCode: document.getElementById('edit-itemCode-' + purchaseId).value,
+        color: document.getElementById('edit-color-' + purchaseId).value,
+        managerName: document.getElementById('edit-managerName-' + purchaseId).value
+      };
+
+      // 사이즈별 수량 추가
+      sizes.forEach(k => {
+        updateData[k] = parseInt(document.getElementById(`edit-${k}-${purchaseId}`).value) || 0;
+      });
+
+      // 총 수량 계산
+      updateData.totalQuantity = sizes.reduce((sum, k) => sum + (updateData[k] || 0), 0);
+
+      const { error } = await sb.from('evPurchase')
+        .update(updateData)
+        .eq('purchaseId', purchaseId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+
+      alert('수정 완료');
+      togglePurchaseList(orderId, true);
     }
 
     window.onload = () => showTab('orderTab');
