@@ -56,7 +56,10 @@
       data.forEach(o => {
         tbody.innerHTML += `
           <tr>
-            <td>${o.orderId}</td>
+            <td>${o.orderId}
+              <button onclick="expandAll('${o.orderId}')" style="font-size:11px;">모두 펼치기</button>
+              <button onclick="collapseAll('${o.orderId}')" style="font-size:11px;">모두 접기</button>
+            </td>
             <td>${o.groupName}</td>
             <td>${o.managerName}</td>
             <td>${o.managerPhone}</td>
@@ -1041,6 +1044,25 @@
 
       alert('수정 완료');
       toggleDeliveryList(orderId, true);
+    }
+
+    // 모두 펼치기/접기 함수 추가
+    function expandAll(orderId) {
+      document.getElementById('purchase-list-row-' + orderId).style.display = '';
+      document.getElementById('design-list-row-' + orderId).style.display = '';
+      document.getElementById('print-list-row-' + orderId).style.display = '';
+      document.getElementById('delivery-list-row-' + orderId).style.display = '';
+      // 목록 새로고침
+      togglePurchaseList(orderId, true);
+      toggleDesignList(orderId, true);
+      togglePrintList(orderId, true);
+      toggleDeliveryList(orderId, true);
+    }
+    function collapseAll(orderId) {
+      document.getElementById('purchase-list-row-' + orderId).style.display = 'none';
+      document.getElementById('design-list-row-' + orderId).style.display = 'none';
+      document.getElementById('print-list-row-' + orderId).style.display = 'none';
+      document.getElementById('delivery-list-row-' + orderId).style.display = 'none';
     }
 
     window.onload = () => showTab('orderTab');
