@@ -53,7 +53,7 @@
         tbody.innerHTML = '<tr><td colspan="10">불러오기 실패: '+error.message+'</td></tr>';
         return;
       }
-      // 주문 row HTML을 먼저 모두 누적
+      // 주문 row HTML을 먼저 누적
       let html = '';
       data.forEach(o => {
         html += `
@@ -738,75 +738,63 @@
       else toggleDesignList(orderId, true);
     }
 
-    // 상태 업데이트 함수들
-    async function updatePurchaseStatus(orderId, purchaseId, newStatus) {
-      const { error } = await sb.from('evPurchase')
-        .update({ purchaseStatus: newStatus })
-        .eq('purchaseId', purchaseId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
-      }
-      
-      // 상태 표시 업데이트
+    // 상태 업데이트 함수들 (목록 펼치지 않고 상태 span만 업데이트)
+    async function updatePurchaseStatus(orderId) {
+      // 가장 최근 발주 상태만 표시
+      const { data, error } = await sb.from('evPurchase')
+        .select('purchaseStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
       const statusSpan = document.getElementById('purchaseStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      // 목록 새로고침
-      togglePurchaseList(orderId, true);
-    }
-
-    async function updateDesignStatus(orderId, designId, newStatus) {
-      const { error } = await sb.from('evDesign')
-        .update({ designStatus: newStatus })
-        .eq('designId', designId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
         return;
       }
-      
+      statusSpan.textContent = data[0].purchaseStatus;
+      statusSpan.style.color = getStatusColor(data[0].purchaseStatus);
+    }
+    async function updateDesignStatus(orderId) {
+      const { data, error } = await sb.from('evDesign')
+        .select('designStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
       const statusSpan = document.getElementById('designStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      toggleDesignList(orderId, true);
-    }
-
-    async function updatePrintStatus(orderId, printId, newStatus) {
-      const { error } = await sb.from('evPrint')
-        .update({ printStatus: newStatus })
-        .eq('printId', printId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
         return;
       }
-      
+      statusSpan.textContent = data[0].designStatus;
+      statusSpan.style.color = getStatusColor(data[0].designStatus);
+    }
+    async function updatePrintStatus(orderId) {
+      const { data, error } = await sb.from('evPrint')
+        .select('printStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
       const statusSpan = document.getElementById('printStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      togglePrintList(orderId, true);
-    }
-
-    async function updateDeliveryStatus(orderId, deliveryId, newStatus) {
-      const { error } = await sb.from('evDelivery')
-        .update({ deliveryStatus: newStatus })
-        .eq('deliveryId', deliveryId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
         return;
       }
-      
+      statusSpan.textContent = data[0].printStatus;
+      statusSpan.style.color = getStatusColor(data[0].printStatus);
+    }
+    async function updateDeliveryStatus(orderId) {
+      const { data, error } = await sb.from('evDelivery')
+        .select('deliveryStatus')
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false });
       const statusSpan = document.getElementById('deliveryStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      toggleDeliveryList(orderId, true);
+      if (error || !data || data.length === 0) {
+        statusSpan.textContent = '-';
+        statusSpan.style.color = 'gray';
+        return;
+      }
+      statusSpan.textContent = data[0].deliveryStatus;
+      statusSpan.style.color = getStatusColor(data[0].deliveryStatus);
     }
 
     function getStatusColor(status) {
