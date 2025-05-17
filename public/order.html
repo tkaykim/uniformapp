@@ -74,27 +74,35 @@
               <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
             </td>
             <td>
+              <button onclick="showDesignForm('${o.orderId}')">디자인</button>
+              <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
             </td>
           </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="purchaseFormDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="purchaseListDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="print-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="printFormDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="printFormDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="print-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="printListDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="printListDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="delivery-form-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="deliveryFormDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="deliveryFormDiv-${o.orderId}"></div></td>
           </tr>
           <tr id="delivery-list-row-${o.orderId}" style="display:none;">
-            <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
+            <td colspan="11"><div id="deliveryListDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="design-form-row-${o.orderId}" style="display:none;">
+            <td colspan="11"><div id="designFormDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="design-list-row-${o.orderId}" style="display:none;">
+            <td colspan="11"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
         `;
       });
@@ -246,27 +254,50 @@
       const row = document.getElementById('purchase-form-row-' + orderId);
       row.style.display = '';
       const div = document.getElementById('purchaseFormDiv-' + orderId);
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      let sizeInputs = '';
+      sizes.forEach(k => {
+        sizeInputs += `<label>${k.replace('size_','').toUpperCase()}</label><input id="${k}-${orderId}" type="number" value="0" style="width:50px;">`;
+      });
       div.innerHTML = `
         <b>발주 등록 (주문번호: ${orderId})</b><br>
         <input id="itemName-${orderId}" placeholder="제품명">
         <input id="itemCode-${orderId}" placeholder="제품코드">
         <input id="color-${orderId}" placeholder="색상">
         <input id="managerName-${orderId}" placeholder="담당자명">
-        <input id="totalQuantity-${orderId}" placeholder="총수량">
+        <input id="totalQuantity-${orderId}" placeholder="총수량"><br>
+        <div>${sizeInputs}</div>
         <button onclick="createPurchase('${orderId}')">발주 등록</button>
       `;
     }
     async function createPurchase(orderId) {
       const purchaseId = generatePurchaseId();
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      const sizeData = {};
+      sizes.forEach(k => {
+        sizeData[k] = parseInt(document.getElementById(`${k}-${orderId}`).value) || 0;
+      });
+      const totalQuantity = sizes.reduce((sum, k) => sum + (sizeData[k] || 0), 0);
       const { error } = await sb.from('evPurchase').insert([{
         purchaseId,
         orderId,
-        groupName: '', // 필요시 주문에서 불러와서 자동입력 가능
+        groupName: '',
         itemName: document.getElementById('itemName-' + orderId).value,
         itemCode: document.getElementById('itemCode-' + orderId).value,
         color: document.getElementById('color-' + orderId).value,
         managerName: document.getElementById('managerName-' + orderId).value,
-        totalQuantity: parseInt(document.getElementById('totalQuantity-' + orderId).value) || 0,
+        ...sizeData,
+        totalQuantity,
         purchaseStatus: '발주전'
       }]);
       if (error) alert('발주 등록 실패: ' + error.message);
@@ -479,6 +510,81 @@
       const { error } = await sb.from('evDelivery').update({ courierName: newCourier }).eq('deliveryId', deliveryId);
       if (error) alert('수정 실패: ' + error.message);
       else toggleDeliveryList(orderId, true);
+    }
+
+    // 디자인 폼/목록
+    function showDesignForm(orderId) {
+      document.querySelectorAll('[id^=design-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('design-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('designFormDiv-' + orderId);
+      div.innerHTML = `
+        <b>디자인 등록 (주문번호: ${orderId})</b><br>
+        <input id="title-${orderId}" placeholder="디자인 제목">
+        <input id="description-${orderId}" placeholder="설명">
+        <input id="driveLink-${orderId}" placeholder="구글드라이브 링크">
+        <input id="createdBy-${orderId}" placeholder="작성자">
+        <button onclick="createDesign('${orderId}')">디자인 등록</button>
+      `;
+    }
+    async function createDesign(orderId) {
+      const designId = generateDesignId();
+      const { error } = await sb.from('evDesign').insert([{
+        designId,
+        orderId,
+        title: document.getElementById('title-' + orderId).value,
+        description: document.getElementById('description-' + orderId).value,
+        driveLink: document.getElementById('driveLink-' + orderId).value,
+        createdBy: document.getElementById('createdBy-' + orderId).value,
+        designStatus: '착수전'
+      }]);
+      if (error) alert('디자인 등록 실패: ' + error.message);
+      else {
+        alert('디자인 등록 성공');
+        toggleDesignList(orderId, true);
+      }
+    }
+    async function toggleDesignList(orderId, forceOpen) {
+      const row = document.getElementById('design-list-row-' + orderId);
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evDesign').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const div = document.getElementById('designListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+          return;
+        }
+        if (!data.length) {
+          div.innerHTML = '등록된 디자인이 없습니다.';
+          return;
+        }
+        div.innerHTML = '<b>디자인 목록</b><br><table border="1"><tr><th>디자인번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>' +
+          data.map(d => `
+            <tr>
+              <td>${d.designId}</td>
+              <td>${d.title}</td>
+              <td>${d.createdBy}</td>
+              <td>
+                <button onclick="editDesignPrompt('${d.designId}','${orderId}')">수정</button>
+                <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
+              </td>
+            </tr>
+          `).join('') + '</table>';
+      }
+    }
+    async function deleteDesign(designId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evDesign').delete().eq('designId', designId);
+      if (error) alert('삭제 실패: ' + error.message);
+      else toggleDesignList(orderId, true);
+    }
+    async function editDesignPrompt(designId, orderId) {
+      const newTitle = prompt('새 디자인 제목 입력');
+      if (!newTitle) return;
+      const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
+      if (error) alert('수정 실패: ' + error.message);
+      else toggleDesignList(orderId, true);
     }
 
     window.onload = () => showTab('orderTab');
