@@ -465,26 +465,44 @@
           div.innerHTML = '등록된 인쇄가 없습니다.';
           return;
         }
-        div.innerHTML = '<b>인쇄 목록</b><br><table border="1"><tr><th>인쇄번호</th><th>인쇄방식</th><th>인쇄소명</th><th>상태</th><th>관리</th></tr>' +
-          data.map(p => `
+        div.innerHTML = `
+          <b>인쇄 목록</b><br>
+          <table border="1">
             <tr>
-              <td>${p.printId}</td>
-              <td>${p.printMethod}</td>
-              <td>${p.factoryName}</td>
-              <td>
-                <select onchange="updatePrintStatus('${orderId}', '${p.printId}', this.value)"
-                        style="color: ${getStatusColor(p.printStatus)}">
-                  <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                  <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                  <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
-                </select>
-              </td>
-              <td>
-                <button onclick="editPrintPrompt('${p.printId}','${orderId}')">수정</button>
-                <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
-              </td>
+              <th>인쇄번호</th>
+              <th>인쇄방식</th>
+              <th>인쇄소명</th>
+              <th>인쇄소 연락처</th>
+              <th>납품주소</th>
+              <th>납기일</th>
+              <th>상태</th>
+              <th>관리</th>
             </tr>
-          `).join('') + '</table>';
+            ${data.map(p => `
+              <tr id="print-row-${p.printId}">
+                <td>${p.printId}</td>
+                <td><span class="editable" data-field="printMethod">${p.printMethod}</span></td>
+                <td><span class="editable" data-field="factoryName">${p.factoryName}</span></td>
+                <td><span class="editable" data-field="factoryContact">${p.factoryContact}</span></td>
+                <td><span class="editable" data-field="deliveryAddress">${p.deliveryAddress}</span></td>
+                <td><span class="editable" data-field="expectedDate">${p.expectedDate || ''}</span></td>
+                <td>
+                  <select onchange="updatePrintStatus('${orderId}', '${p.printId}', this.value)"
+                          style="color: ${getStatusColor(p.printStatus)}">
+                    <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                <td>
+                  <button onclick="togglePrintEdit('${p.printId}', '${orderId}')" id="edit-btn-${p.printId}">수정</button>
+                  <button onclick="savePrintEdit('${p.printId}', '${orderId}')" style="display:none" id="save-btn-${p.printId}">저장</button>
+                  <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
       }
     }
     async function deletePrint(printId, orderId) {
@@ -554,26 +572,44 @@
           div.innerHTML = '등록된 배송이 없습니다.';
           return;
         }
-        div.innerHTML = '<b>배송 목록</b><br><table border="1"><tr><th>배송번호</th><th>택배사</th><th>송장번호</th><th>상태</th><th>관리</th></tr>' +
-          data.map(d => `
+        div.innerHTML = `
+          <b>배송 목록</b><br>
+          <table border="1">
             <tr>
-              <td>${d.deliveryId}</td>
-              <td>${d.courierName}</td>
-              <td>${d.trackingNumber}</td>
-              <td>
-                <select onchange="updateDeliveryStatus('${orderId}', '${d.deliveryId}', this.value)"
-                        style="color: ${getStatusColor(d.deliveryStatus)}">
-                  <option value="배송전" ${d.deliveryStatus === '배송전' ? 'selected' : ''}>배송전</option>
-                  <option value="진행중" ${d.deliveryStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                  <option value="완료" ${d.deliveryStatus === '완료' ? 'selected' : ''}>완료</option>
-                </select>
-              </td>
-              <td>
-                <button onclick="editDeliveryPrompt('${d.deliveryId}','${orderId}')">수정</button>
-                <button onclick="deleteDelivery('${d.deliveryId}','${orderId}')">삭제</button>
-              </td>
+              <th>배송번호</th>
+              <th>택배사</th>
+              <th>송장번호</th>
+              <th>배송주소</th>
+              <th>수령인</th>
+              <th>연락처</th>
+              <th>상태</th>
+              <th>관리</th>
             </tr>
-          `).join('') + '</table>';
+            ${data.map(d => `
+              <tr id="delivery-row-${d.deliveryId}">
+                <td>${d.deliveryId}</td>
+                <td><span class="editable" data-field="courierName">${d.courierName}</span></td>
+                <td><span class="editable" data-field="trackingNumber">${d.trackingNumber}</span></td>
+                <td><span class="editable" data-field="deliveryAddress">${d.deliveryAddress}</span></td>
+                <td><span class="editable" data-field="recipientName">${d.recipientName}</span></td>
+                <td><span class="editable" data-field="recipientPhone">${d.recipientPhone}</span></td>
+                <td>
+                  <select onchange="updateDeliveryStatus('${orderId}', '${d.deliveryId}', this.value)"
+                          style="color: ${getStatusColor(d.deliveryStatus)}">
+                    <option value="배송전" ${d.deliveryStatus === '배송전' ? 'selected' : ''}>배송전</option>
+                    <option value="진행중" ${d.deliveryStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${d.deliveryStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                <td>
+                  <button onclick="toggleDeliveryEdit('${d.deliveryId}', '${orderId}')" id="edit-btn-${d.deliveryId}">수정</button>
+                  <button onclick="saveDeliveryEdit('${d.deliveryId}', '${orderId}')" style="display:none" id="save-btn-${d.deliveryId}">저장</button>
+                  <button onclick="deleteDelivery('${d.deliveryId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
       }
     }
     async function deleteDelivery(deliveryId, orderId) {
@@ -634,32 +670,48 @@
         const div = document.getElementById('designListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
-        return;
+          return;
         }
         if (!data.length) {
           div.innerHTML = '등록된 디자인이 없습니다.';
           return;
         }
-        div.innerHTML = '<b>디자인 목록</b><br><table border="1"><tr><th>디자인번호</th><th>제목</th><th>작성자</th><th>상태</th><th>관리</th></tr>' +
-          data.map(d => `
+        div.innerHTML = `
+          <b>디자인 목록</b><br>
+          <table border="1">
             <tr>
-              <td>${d.designId}</td>
-              <td>${d.title}</td>
-              <td>${d.createdBy}</td>
-              <td>
-                <select onchange="updateDesignStatus('${orderId}', '${d.designId}', this.value)"
-                        style="color: ${getStatusColor(d.designStatus)}">
-                  <option value="착수전" ${d.designStatus === '착수전' ? 'selected' : ''}>착수전</option>
-                  <option value="진행중" ${d.designStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                  <option value="완료" ${d.designStatus === '완료' ? 'selected' : ''}>완료</option>
-                </select>
-              </td>
-              <td>
-                <button onclick="editDesignPrompt('${d.designId}','${orderId}')">수정</button>
-                <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
-              </td>
+              <th>디자인번호</th>
+              <th>제목</th>
+              <th>설명</th>
+              <th>구글드라이브 링크</th>
+              <th>작성자</th>
+              <th>상태</th>
+              <th>관리</th>
             </tr>
-          `).join('') + '</table>';
+            ${data.map(d => `
+              <tr id="design-row-${d.designId}">
+                <td>${d.designId}</td>
+                <td><span class="editable" data-field="title">${d.title}</span></td>
+                <td><span class="editable" data-field="description">${d.description}</span></td>
+                <td><span class="editable" data-field="driveLink">${d.driveLink}</span></td>
+                <td><span class="editable" data-field="createdBy">${d.createdBy}</span></td>
+                <td>
+                  <select onchange="updateDesignStatus('${orderId}', '${d.designId}', this.value)"
+                          style="color: ${getStatusColor(d.designStatus)}">
+                    <option value="착수전" ${d.designStatus === '착수전' ? 'selected' : ''}>착수전</option>
+                    <option value="진행중" ${d.designStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${d.designStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                <td>
+                  <button onclick="toggleDesignEdit('${d.designId}', '${orderId}')" id="edit-btn-${d.designId}">수정</button>
+                  <button onclick="saveDesignEdit('${d.designId}', '${orderId}')" style="display:none" id="save-btn-${d.designId}">저장</button>
+                  <button onclick="deleteDesign('${d.designId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
       }
     }
     async function deleteDesign(designId, orderId) {
@@ -858,6 +910,137 @@
 
       alert('수정 완료');
       togglePurchaseList(orderId, true);
+    }
+
+    // 디자인 수정 모드 토글
+    function toggleDesignEdit(designId, orderId) {
+      const row = document.getElementById('design-row-' + designId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + designId);
+      const saveBtn = document.getElementById('save-btn-' + designId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        span.innerHTML = `<input type="text" value="${currentValue}" 
+                               id="edit-${field}-${designId}" 
+                               style="width:100%">`;
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 인쇄 수정 모드 토글
+    function togglePrintEdit(printId, orderId) {
+      const row = document.getElementById('print-row-' + printId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + printId);
+      const saveBtn = document.getElementById('save-btn-' + printId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        if (field === 'expectedDate') {
+          span.innerHTML = `<input type="date" value="${currentValue}" 
+                                 id="edit-${field}-${printId}" 
+                                 style="width:100%">`;
+        } else {
+          span.innerHTML = `<input type="text" value="${currentValue}" 
+                                 id="edit-${field}-${printId}" 
+                                 style="width:100%">`;
+        }
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 배송 수정 모드 토글
+    function toggleDeliveryEdit(deliveryId, orderId) {
+      const row = document.getElementById('delivery-row-' + deliveryId);
+      const editableSpans = row.querySelectorAll('.editable');
+      const editBtn = document.getElementById('edit-btn-' + deliveryId);
+      const saveBtn = document.getElementById('save-btn-' + deliveryId);
+      
+      editableSpans.forEach(span => {
+        const currentValue = span.textContent;
+        const field = span.getAttribute('data-field');
+        span.innerHTML = `<input type="text" value="${currentValue}" 
+                               id="edit-${field}-${deliveryId}" 
+                               style="width:100%">`;
+      });
+
+      editBtn.style.display = 'none';
+      saveBtn.style.display = 'inline';
+    }
+
+    // 디자인 수정 저장
+    async function saveDesignEdit(designId, orderId) {
+      const updateData = {
+        title: document.getElementById('edit-title-' + designId).value,
+        description: document.getElementById('edit-description-' + designId).value,
+        driveLink: document.getElementById('edit-driveLink-' + designId).value,
+        createdBy: document.getElementById('edit-createdBy-' + designId).value
+      };
+
+      const { error } = await sb.from('evDesign')
+        .update(updateData)
+        .eq('designId', designId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+
+      alert('수정 완료');
+      toggleDesignList(orderId, true);
+    }
+
+    // 인쇄 수정 저장
+    async function savePrintEdit(printId, orderId) {
+      const updateData = {
+        printMethod: document.getElementById('edit-printMethod-' + printId).value,
+        factoryName: document.getElementById('edit-factoryName-' + printId).value,
+        factoryContact: document.getElementById('edit-factoryContact-' + printId).value,
+        deliveryAddress: document.getElementById('edit-deliveryAddress-' + printId).value,
+        expectedDate: document.getElementById('edit-expectedDate-' + printId).value
+      };
+
+      const { error } = await sb.from('evPrint')
+        .update(updateData)
+        .eq('printId', printId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+
+      alert('수정 완료');
+      togglePrintList(orderId, true);
+    }
+
+    // 배송 수정 저장
+    async function saveDeliveryEdit(deliveryId, orderId) {
+      const updateData = {
+        courierName: document.getElementById('edit-courierName-' + deliveryId).value,
+        trackingNumber: document.getElementById('edit-trackingNumber-' + deliveryId).value,
+        deliveryAddress: document.getElementById('edit-deliveryAddress-' + deliveryId).value,
+        recipientName: document.getElementById('edit-recipientName-' + deliveryId).value,
+        recipientPhone: document.getElementById('edit-recipientPhone-' + deliveryId).value
+      };
+
+      const { error } = await sb.from('evDelivery')
+        .update(updateData)
+        .eq('deliveryId', deliveryId);
+
+      if (error) {
+        alert('수정 실패: ' + error.message);
+        return;
+      }
+
+      alert('수정 완료');
+      toggleDeliveryList(orderId, true);
     }
 
     window.onload = () => showTab('orderTab');
