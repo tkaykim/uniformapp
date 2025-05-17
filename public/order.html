@@ -1284,6 +1284,19 @@
       updateTabVisibility();
       showTab('orderTab');
     };
+
+    function updateTabBtnVisibility() {
+      const role = sessionStorage.getItem('role') || '슈퍼관리자';
+      document.getElementById('orderTabBtn').style.display = (role === '디자인관리자') ? 'none' : '';
+      document.getElementById('purchaseTabBtn').style.display = 'none';
+      document.getElementById('designTabBtn').style.display = (role === '디자인관리자') ? '' : 'none';
+    }
+    // 기존 updateTabVisibility 함수 마지막에 호출
+    const _oldUpdateTabVisibility = updateTabVisibility;
+    updateTabVisibility = function() {
+      _oldUpdateTabVisibility();
+      updateTabBtnVisibility();
+    }
   </script>
 </head>
 <body>
@@ -1294,9 +1307,9 @@
     <button onclick="setRole('결제관리자')">결제관리자</button>
     <button onclick="setRole('디자인관리자')">디자인관리자</button>
   </div>
-  <button onclick="showTab('orderTab')">주문관리</button>
-  <button onclick="showTab('purchaseTab')">발주관리</button>
-  <button onclick="showTab('designTab')">디자인관리</button>
+  <div id="tabBtns" style="margin-bottom:10px;">
+    <button id="orderTabBtn" onclick="showTab('orderTab')">주문관리</button>
+  </div>
 
   <!-- 주문관리 -->
   <div id="orderTab" class="tab" style="display:none;">
@@ -1314,38 +1327,6 @@
         <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>관리</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
-  </div>
-
-  <!-- 발주관리 -->
-  <div id="purchaseTab" class="tab" style="display:none;">
-    <h2>발주 등록</h2>
-    <input id="purchaseOrderId" placeholder="주문번호">
-    <input id="purchaseGroupName" placeholder="단체명">
-    <input id="itemName" placeholder="제품명">
-    <input id="itemCode" placeholder="제품코드">
-    <input id="color" placeholder="색상">
-    <input id="purchaseManagerName" placeholder="담당자명">
-    <input id="purchaseTotalQuantity" placeholder="총수량">
-    <button onclick="createPurchase()">등록</button>
-    <h3>발주 목록</h3>
-    <table border="1"><thead>
-      <tr><th>발주번호</th><th>주문번호</th><th>단체명</th><th>제품명</th><th>총수량</th><th>관리</th></tr>
-    </thead><tbody id="purchaseList"></tbody></table>
-  </div>
-
-  <!-- 디자인관리 -->
-  <div id="designTab" class="tab" style="display:none;">
-    <h2>디자인 등록</h2>
-    <input id="designOrderId" placeholder="주문번호">
-    <input id="title" placeholder="디자인 제목">
-    <input id="description" placeholder="설명">
-    <input id="driveLink" placeholder="구글드라이브 링크">
-    <input id="createdBy" placeholder="작성자">
-    <button onclick="createDesign()">등록</button>
-    <h3>디자인 목록</h3>
-    <table border="1"><thead>
-      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
-    </thead><tbody id="designList"></tbody></table>
   </div>
 </body>
 </html>
