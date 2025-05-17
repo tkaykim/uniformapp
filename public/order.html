@@ -5,7 +5,8 @@
   <title>유니폼 운영 시스템 - CRUD</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const supabase = supabase.createClient(
+    // supabase 변수명 중복 방지: window.supabase로 접근
+    const sb = window.supabase.createClient(
       'https://pebyrncdfrbgwhgkagtk.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlYnlybmNkZnJiZ3doZ2thZ3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0NzM1NzMsImV4cCI6MjA2MzA0OTU3M30.C_OW_XKunWMulydwOs-Tb5xEU2rxYPLFfubIJsh39Ew'
     );
@@ -22,7 +23,7 @@
     // 주문 CRUD
     async function createOrder() {
       const orderId = generateOrderId();
-      const { data, error } = await supabase.from('evOrder').insert([{
+      const { data, error } = await sb.from('evOrder').insert([{
         orderId,
         orderDate: document.getElementById('orderDate').value,
         groupName: document.getElementById('groupName').value,
@@ -45,7 +46,7 @@
         Math.floor(Math.random()*10000).toString().padStart(4,'0');
     }
     async function loadOrders() {
-      const { data, error } = await supabase.from('evOrder').select('*').order('createdAt', { ascending: false });
+      const { data, error } = await sb.from('evOrder').select('*').order('createdAt', { ascending: false });
       const tbody = document.getElementById('orderList');
       tbody.innerHTML = '';
       if (error) {
@@ -70,14 +71,14 @@
     }
     async function deleteOrder(orderId) {
       if (!confirm('정말 삭제?')) return;
-      const { error } = await supabase.from('evOrder').delete().eq('orderId', orderId);
+      const { error } = await sb.from('evOrder').delete().eq('orderId', orderId);
       if (error) alert('삭제 실패: ' + error.message);
       else loadOrders();
     }
     async function editOrderPrompt(orderId) {
       const newName = prompt('새 단체명 입력');
       if (!newName) return;
-      const { error } = await supabase.from('evOrder').update({ groupName: newName }).eq('orderId', orderId);
+      const { error } = await sb.from('evOrder').update({ groupName: newName }).eq('orderId', orderId);
       if (error) alert('수정 실패: ' + error.message);
       else loadOrders();
     }
@@ -85,7 +86,7 @@
     // 발주 CRUD
     async function createPurchase() {
       const purchaseId = generatePurchaseId();
-      const { data, error } = await supabase.from('evPurchase').insert([{
+      const { data, error } = await sb.from('evPurchase').insert([{
         purchaseId,
         orderId: document.getElementById('purchaseOrderId').value,
         groupName: document.getElementById('purchaseGroupName').value,
@@ -110,7 +111,7 @@
         '_PUR' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
     }
     async function loadPurchases() {
-      const { data, error } = await supabase.from('evPurchase').select('*').order('createdAt', { ascending: false });
+      const { data, error } = await sb.from('evPurchase').select('*').order('createdAt', { ascending: false });
       const tbody = document.getElementById('purchaseList');
       tbody.innerHTML = '';
       if (error) {
@@ -135,14 +136,14 @@
     }
     async function deletePurchase(purchaseId) {
       if (!confirm('정말 삭제?')) return;
-      const { error } = await supabase.from('evPurchase').delete().eq('purchaseId', purchaseId);
+      const { error } = await sb.from('evPurchase').delete().eq('purchaseId', purchaseId);
       if (error) alert('삭제 실패: ' + error.message);
       else loadPurchases();
     }
     async function editPurchasePrompt(purchaseId) {
       const newName = prompt('새 제품명 입력');
       if (!newName) return;
-      const { error } = await supabase.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
+      const { error } = await sb.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
       if (error) alert('수정 실패: ' + error.message);
       else loadPurchases();
     }
@@ -150,7 +151,7 @@
     // 디자인 CRUD
     async function createDesign() {
       const designId = generateDesignId();
-      const { data, error } = await supabase.from('evDesign').insert([{
+      const { data, error } = await sb.from('evDesign').insert([{
         designId,
         orderId: document.getElementById('designOrderId').value,
         title: document.getElementById('title').value,
@@ -173,7 +174,7 @@
         '_DES' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
     }
     async function loadDesigns() {
-      const { data, error } = await supabase.from('evDesign').select('*').order('createdAt', { ascending: false });
+      const { data, error } = await sb.from('evDesign').select('*').order('createdAt', { ascending: false });
       const tbody = document.getElementById('designList');
       tbody.innerHTML = '';
       if (error) {
@@ -197,14 +198,14 @@
     }
     async function deleteDesign(designId) {
       if (!confirm('정말 삭제?')) return;
-      const { error } = await supabase.from('evDesign').delete().eq('designId', designId);
+      const { error } = await sb.from('evDesign').delete().eq('designId', designId);
       if (error) alert('삭제 실패: ' + error.message);
       else loadDesigns();
     }
     async function editDesignPrompt(designId) {
       const newTitle = prompt('새 디자인 제목 입력');
       if (!newTitle) return;
-      const { error } = await supabase.from('evDesign').update({ title: newTitle }).eq('designId', designId);
+      const { error } = await sb.from('evDesign').update({ title: newTitle }).eq('designId', designId);
       if (error) alert('수정 실패: ' + error.message);
       else loadDesigns();
     }
