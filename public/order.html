@@ -403,6 +403,7 @@
     }
     async function togglePurchaseList(orderId, forceOpen) {
       const row = document.getElementById('purchase-list-row-' + orderId);
+      if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
@@ -532,6 +533,7 @@
     }
     async function togglePrintList(orderId, forceOpen) {
       const row = document.getElementById('print-list-row-' + orderId);
+      if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
@@ -643,6 +645,7 @@
     }
     async function toggleDeliveryList(orderId, forceOpen) {
       const row = document.getElementById('delivery-list-row-' + orderId);
+      if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
@@ -751,6 +754,7 @@
     }
     async function toggleDesignList(orderId, forceOpen) {
       const row = document.getElementById('design-list-row-' + orderId);
+      if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
