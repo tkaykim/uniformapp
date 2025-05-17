@@ -668,29 +668,19 @@
 
     // 상태 업데이트 함수들
     async function updatePurchaseStatus(orderId, purchaseId, newStatus) {
-      if (purchaseId) {
-        // 특정 발주의 상태 업데이트
-        const { error } = await sb.from('evPurchase')
-          .update({ purchaseStatus: newStatus })
-          .eq('purchaseId', purchaseId);
-        
-        if (error) {
-          alert('상태 변경 실패: ' + error.message);
-          return;
-        }
-        togglePurchaseList(orderId, true);
-      } else {
-        // 주문의 모든 발주 상태 업데이트
-        const { error } = await sb.from('evPurchase')
-          .update({ purchaseStatus: newStatus })
-          .eq('orderId', orderId);
-        
-        if (error) {
-          alert('상태 변경 실패: ' + error.message);
-          return;
-        }
+      if (!purchaseId) {
+        alert('상세보기에서 개별 발주 상태만 변경 가능합니다.');
+        return;
       }
-      loadOrders(); // 주문 목록 새로고침
+      const { error } = await sb.from('evPurchase')
+        .update({ purchaseStatus: newStatus })
+        .eq('purchaseId', purchaseId);
+
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      togglePurchaseList(orderId, true);
     }
 
     async function updateDesignStatus(orderId, designId, newStatus) {
