@@ -126,16 +126,16 @@
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
-                  </tr>
+          </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-                  </tr>
+          </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
@@ -1225,8 +1225,42 @@
       document.getElementById('orderTab').style.display = tabPermissions[role].includes('orderTab') ? '' : 'none';
       if (document.getElementById('purchaseTab')) document.getElementById('purchaseTab').style.display = tabPermissions[role].includes('purchaseTab') ? '' : 'none';
       if (document.getElementById('designTab')) document.getElementById('designTab').style.display = tabPermissions[role].includes('designTab') ? '' : 'none';
-      // printTab, deliveryTab, costTab은 실제로 구현되어 있으면 추가
-      // 비용 관련 버튼/필드도 권한별로 제어하려면 아래에 추가
+      // 주문 목록 컬럼/버튼 노출 제어
+      setTimeout(() => {
+        const orderTable = document.querySelector('#orderTab table');
+        if (!orderTable) return;
+        const role = sessionStorage.getItem('role') || '슈퍼관리자';
+        // 헤더 처리
+        const ths = orderTable.querySelectorAll('thead th');
+        const tds = orderTable.querySelectorAll('tbody tr');
+        // 슈퍼관리자: 모두 보임
+        if (role === '슈퍼관리자') {
+          ths.forEach(th => th.style.display = '');
+          tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
+        }
+        // 중간관리자: 비용관리(마지막 td) 숨김
+        else if (role === '중간관리자') {
+          ths.forEach((th, i) => {
+            if (i === 10) th.style.display = 'none'; else th.style.display = '';
+          });
+          tds.forEach(tr => {
+            Array.from(tr.children).forEach((td, i) => {
+              if (i === 10) td.style.display = 'none'; else td.style.display = '';
+            });
+          });
+        }
+        // 디자인관리자: 주문번호, 단체명, 담당자, 디자인파트만 보임(0,1,2,6번 td)
+        else if (role === '디자인관리자') {
+          ths.forEach((th, i) => {
+            if ([0,1,2,6].includes(i)) th.style.display = ''; else th.style.display = 'none';
+          });
+          tds.forEach(tr => {
+            Array.from(tr.children).forEach((td, i) => {
+              if ([0,1,2,6].includes(i)) td.style.display = ''; else td.style.display = 'none';
+            });
+          });
+        }
+      }, 100);
     }
     // 페이지 진입 시 권한 기본값
     if (!sessionStorage.getItem('role')) sessionStorage.setItem('role','슈퍼관리자');
