@@ -1208,10 +1208,42 @@
       else wrap.style.display = 'none';
     }
 
-    window.onload = () => showTab('orderTab');
+    // 권한별 탭/섹션 노출 정의
+    const tabPermissions = {
+      '슈퍼관리자': ['orderTab','purchaseTab','designTab','printTab','deliveryTab','costTab'],
+      '중간관리자': ['orderTab','purchaseTab','designTab','costTab'],
+      '결제관리자': ['orderTab','costTab'],
+      '디자인관리자': ['designTab']
+    };
+    function setRole(role) {
+      sessionStorage.setItem('role', role);
+      updateTabVisibility();
+    }
+    function updateTabVisibility() {
+      const role = sessionStorage.getItem('role') || '슈퍼관리자';
+      // 탭/섹션 노출 제어
+      document.getElementById('orderTab').style.display = tabPermissions[role].includes('orderTab') ? '' : 'none';
+      if (document.getElementById('purchaseTab')) document.getElementById('purchaseTab').style.display = tabPermissions[role].includes('purchaseTab') ? '' : 'none';
+      if (document.getElementById('designTab')) document.getElementById('designTab').style.display = tabPermissions[role].includes('designTab') ? '' : 'none';
+      // printTab, deliveryTab, costTab은 실제로 구현되어 있으면 추가
+      // 비용 관련 버튼/필드도 권한별로 제어하려면 아래에 추가
+    }
+    // 페이지 진입 시 권한 기본값
+    if (!sessionStorage.getItem('role')) sessionStorage.setItem('role','슈퍼관리자');
+    window.onload = function() {
+      updateTabVisibility();
+      showTab('orderTab');
+    };
   </script>
 </head>
 <body>
+  <div style="margin-bottom:10px;">
+    <b>권한 선택(테스트용):</b>
+    <button onclick="setRole('슈퍼관리자')">슈퍼관리자</button>
+    <button onclick="setRole('중간관리자')">중간관리자</button>
+    <button onclick="setRole('결제관리자')">결제관리자</button>
+    <button onclick="setRole('디자인관리자')">디자인관리자</button>
+  </div>
   <button onclick="showTab('orderTab')">주문관리</button>
   <button onclick="showTab('purchaseTab')">발주관리</button>
   <button onclick="showTab('designTab')">디자인관리</button>
