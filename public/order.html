@@ -64,22 +64,42 @@
             <td>
               <button onclick="showPurchaseForm('${o.orderId}')">발주</button>
               <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
-              <span id="purchaseStatus-${o.orderId}">-</span>
+              <select onchange="updatePurchaseStatus('${o.orderId}', null, this.value)" 
+                      style="color: ${getStatusColor(getLatestStatus('purchase', o.orderId))}">
+                <option value="발주전" ${getLatestStatus('purchase', o.orderId) === '발주전' ? 'selected' : ''}>발주전</option>
+                <option value="진행중" ${getLatestStatus('purchase', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
+                <option value="완료" ${getLatestStatus('purchase', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
+              </select>
             </td>
             <td>
               <button onclick="showDesignForm('${o.orderId}')">디자인</button>
               <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
-              <span id="designStatus-${o.orderId}">-</span>
+              <select onchange="updateDesignStatus('${o.orderId}', null, this.value)"
+                      style="color: ${getStatusColor(getLatestStatus('design', o.orderId))}">
+                <option value="착수전" ${getLatestStatus('design', o.orderId) === '착수전' ? 'selected' : ''}>착수전</option>
+                <option value="진행중" ${getLatestStatus('design', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
+                <option value="완료" ${getLatestStatus('design', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
+              </select>
             </td>
             <td>
               <button onclick="showPrintForm('${o.orderId}')">인쇄</button>
               <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
-              <span id="printStatus-${o.orderId}">-</span>
+              <select onchange="updatePrintStatus('${o.orderId}', null, this.value)"
+                      style="color: ${getStatusColor(getLatestStatus('print', o.orderId))}">
+                <option value="발주전" ${getLatestStatus('print', o.orderId) === '발주전' ? 'selected' : ''}>발주전</option>
+                <option value="진행중" ${getLatestStatus('print', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
+                <option value="완료" ${getLatestStatus('print', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
+              </select>
             </td>
             <td>
               <button onclick="showDeliveryForm('${o.orderId}')">배송</button>
               <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
-              <span id="deliveryStatus-${o.orderId}">-</span>
+              <select onchange="updateDeliveryStatus('${o.orderId}', null, this.value)"
+                      style="color: ${getStatusColor(getLatestStatus('delivery', o.orderId))}">
+                <option value="배송전" ${getLatestStatus('delivery', o.orderId) === '배송전' ? 'selected' : ''}>배송전</option>
+                <option value="진행중" ${getLatestStatus('delivery', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
+                <option value="완료" ${getLatestStatus('delivery', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
+              </select>
             </td>
             <td>
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
@@ -648,73 +668,101 @@
 
     // 상태 업데이트 함수들
     async function updatePurchaseStatus(orderId, purchaseId, newStatus) {
-      const { error } = await sb.from('evPurchase')
-        .update({ purchaseStatus: newStatus })
-        .eq('purchaseId', purchaseId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
+      if (purchaseId) {
+        // 특정 발주의 상태 업데이트
+        const { error } = await sb.from('evPurchase')
+          .update({ purchaseStatus: newStatus })
+          .eq('purchaseId', purchaseId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
+        togglePurchaseList(orderId, true);
+      } else {
+        // 주문의 모든 발주 상태 업데이트
+        const { error } = await sb.from('evPurchase')
+          .update({ purchaseStatus: newStatus })
+          .eq('orderId', orderId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
       }
-      
-      // 상태 표시 업데이트
-      const statusSpan = document.getElementById('purchaseStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      // 목록 새로고침
-      togglePurchaseList(orderId, true);
+      loadOrders(); // 주문 목록 새로고침
     }
 
     async function updateDesignStatus(orderId, designId, newStatus) {
-      const { error } = await sb.from('evDesign')
-        .update({ designStatus: newStatus })
-        .eq('designId', designId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
+      if (designId) {
+        const { error } = await sb.from('evDesign')
+          .update({ designStatus: newStatus })
+          .eq('designId', designId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
+        toggleDesignList(orderId, true);
+      } else {
+        const { error } = await sb.from('evDesign')
+          .update({ designStatus: newStatus })
+          .eq('orderId', orderId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
       }
-      
-      const statusSpan = document.getElementById('designStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      toggleDesignList(orderId, true);
+      loadOrders();
     }
 
     async function updatePrintStatus(orderId, printId, newStatus) {
-      const { error } = await sb.from('evPrint')
-        .update({ printStatus: newStatus })
-        .eq('printId', printId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
+      if (printId) {
+        const { error } = await sb.from('evPrint')
+          .update({ printStatus: newStatus })
+          .eq('printId', printId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
+        togglePrintList(orderId, true);
+      } else {
+        const { error } = await sb.from('evPrint')
+          .update({ printStatus: newStatus })
+          .eq('orderId', orderId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
       }
-      
-      const statusSpan = document.getElementById('printStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      togglePrintList(orderId, true);
+      loadOrders();
     }
 
     async function updateDeliveryStatus(orderId, deliveryId, newStatus) {
-      const { error } = await sb.from('evDelivery')
-        .update({ deliveryStatus: newStatus })
-        .eq('deliveryId', deliveryId);
-      
-      if (error) {
-        alert('상태 변경 실패: ' + error.message);
-        return;
+      if (deliveryId) {
+        const { error } = await sb.from('evDelivery')
+          .update({ deliveryStatus: newStatus })
+          .eq('deliveryId', deliveryId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
+        toggleDeliveryList(orderId, true);
+      } else {
+        const { error } = await sb.from('evDelivery')
+          .update({ deliveryStatus: newStatus })
+          .eq('orderId', orderId);
+        
+        if (error) {
+          alert('상태 변경 실패: ' + error.message);
+          return;
+        }
       }
-      
-      const statusSpan = document.getElementById('deliveryStatus-' + orderId);
-      statusSpan.textContent = newStatus;
-      statusSpan.style.color = getStatusColor(newStatus);
-      
-      toggleDeliveryList(orderId, true);
+      loadOrders();
     }
 
     function getStatusColor(status) {
@@ -746,6 +794,45 @@
         total += value;
       });
       document.getElementById('totalQuantity-' + orderId).value = total;
+    }
+
+    // 최신 상태 조회 함수 추가
+    async function getLatestStatus(type, orderId) {
+      let table, statusField;
+      switch(type) {
+        case 'purchase':
+          table = 'evPurchase';
+          statusField = 'purchaseStatus';
+          break;
+        case 'design':
+          table = 'evDesign';
+          statusField = 'designStatus';
+          break;
+        case 'print':
+          table = 'evPrint';
+          statusField = 'printStatus';
+          break;
+        case 'delivery':
+          table = 'evDelivery';
+          statusField = 'deliveryStatus';
+          break;
+      }
+
+      const { data, error } = await sb.from(table)
+        .select(statusField)
+        .eq('orderId', orderId)
+        .order('createdAt', { ascending: false })
+        .limit(1);
+
+      if (error || !data.length) {
+        switch(type) {
+          case 'purchase': return '발주전';
+          case 'design': return '착수전';
+          case 'print': return '발주전';
+          case 'delivery': return '배송전';
+        }
+      }
+      return data[0][statusField];
     }
 
     window.onload = () => showTab('orderTab');
@@ -802,7 +889,7 @@
     <button onclick="createDesign()">등록</button>
     <h3>디자인 목록</h3>
     <table border="1"><thead>
-      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>관리</th></tr>
+      <tr><th>디자인번호</th><th>주문번호</th><th>제목</th><th>작성자</th><th>상태</th><th>관리</th></tr>
     </thead><tbody id="designList"></tbody></table>
   </div>
 </body>
