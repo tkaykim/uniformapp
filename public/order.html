@@ -4,6 +4,32 @@
   <meta charset="UTF-8">
   <title>유니폼 운영 시스템 - CRUD</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    .cost-btn-group {
+      display: flex;
+      gap: 6px;
+      background: #f7f7fa;
+      border: 1px solid #d0d0e0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 6px 0 2px 0;
+      box-shadow: 0 1px 3px 0 #eee;
+      align-items: center;
+      width: fit-content;
+    }
+    .cost-btn-group button {
+      background: #fff;
+      border: 1px solid #b0b0c0;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cost-btn-group button:hover {
+      background: #e6eaff;
+    }
+  </style>
   <script>
     // supabase 변수명 중복 방지: window.supabase로 접근
     const sb = window.supabase.createClient(
@@ -89,11 +115,13 @@
             <td>
               <button onclick="toggleCostButtons('${o.orderId}')">비용추가</button>
               <span id="costBtnWrap-${o.orderId}" style="display:none;">
-                <button onclick=\"showCostForm('발주','${o.orderId}')\">발주비용 추가</button>
-                <button onclick=\"showCostForm('디자인','${o.orderId}')\">디자인비용 추가</button>
-                <button onclick=\"showCostForm('인쇄','${o.orderId}')\">인쇄비용 추가</button>
-                <button onclick=\"showCostForm('배송','${o.orderId}')\">배송비용 추가</button>
-                <button onclick=\"showCostForm('기타','${o.orderId}')\">기타비용 추가</button>
+                <span class="cost-btn-group">
+                  <button onclick=\"showCostForm('발주','${o.orderId}')\">발주비용 추가</button>
+                  <button onclick=\"showCostForm('디자인','${o.orderId}')\">디자인비용 추가</button>
+                  <button onclick=\"showCostForm('인쇄','${o.orderId}')\">인쇄비용 추가</button>
+                  <button onclick=\"showCostForm('배송','${o.orderId}')\">배송비용 추가</button>
+                  <button onclick=\"showCostForm('기타','${o.orderId}')\">기타비용 추가</button>
+                </span>
               </span>
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
