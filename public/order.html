@@ -66,11 +66,13 @@
       }
     }
     function generateOrderId() {
-      const d = new Date();
-      return d.getFullYear().toString() + 
-        String(d.getMonth()+1).padStart(2,'0') + 
-        String(d.getDate()).padStart(2,'0') + 
-        Math.floor(Math.random()*10000).toString().padStart(4,'0');
+      // 현재 UTC 기준 시간을 KST로 변환
+      const now = new Date();
+      const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      return kst.getFullYear().toString() +
+        String(kst.getMonth() + 1).padStart(2, '0') +
+        String(kst.getDate()).padStart(2, '0') +
+        Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     }
     async function loadOrders() {
       const { data, error } = await sb.from('evOrder').select('*').order('createdAt', { ascending: false });
@@ -130,16 +132,16 @@
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
               <span id="costSum-${o.orderId}">0</span>원
             </td>
-          </tr>
+                  </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="purchase-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseListDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="design-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designFormDiv-${o.orderId}"></div></td>
-          </tr>
+                  </tr>
           <tr id="design-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="designListDiv-${o.orderId}"></div></td>
           </tr>
