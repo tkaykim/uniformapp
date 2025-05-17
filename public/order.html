@@ -334,6 +334,7 @@
           </div>`;
       });
       div.innerHTML = `
+        <div style='text-align:right'><button onclick="closePurchaseForm('${orderId}')">닫기</button></div>
         <b>발주 등록 (주문번호: ${orderId})</b><br>
         <input id="itemName-${orderId}" placeholder="제품명">
         <input id="itemCode-${orderId}" placeholder="제품코드">
@@ -343,6 +344,9 @@
         <div>${sizeInputs}</div>
         <button onclick="createPurchase('${orderId}')">발주 등록</button>
       `;
+    }
+    function closePurchaseForm(orderId) {
+      document.getElementById('purchase-form-row-' + orderId).style.display = 'none';
     }
     async function createPurchase(orderId) {
       const purchaseId = generatePurchaseId();
@@ -466,6 +470,7 @@
       row.style.display = '';
       const div = document.getElementById('printFormDiv-' + orderId);
       div.innerHTML = `
+        <div style='text-align:right'><button onclick="closePrintForm('${orderId}')">닫기</button></div>
         <b>인쇄 등록 (주문번호: ${orderId})</b><br>
         <input id="printMethod-${orderId}" placeholder="인쇄방식">
         <input id="factoryName-${orderId}" placeholder="인쇄소명">
@@ -474,6 +479,9 @@
         <input id="expectedDate-${orderId}" type="date" placeholder="납기일">
         <button onclick="createPrint('${orderId}')">인쇄 등록</button>
       `;
+    }
+    function closePrintForm(orderId) {
+      document.getElementById('print-form-row-' + orderId).style.display = 'none';
     }
     async function createPrint(orderId) {
       const printId = generatePrintId();
@@ -579,11 +587,15 @@
       row.style.display = '';
       const div = document.getElementById('deliveryFormDiv-' + orderId);
       div.innerHTML = `
+        <div style='text-align:right'><button onclick="closeDeliveryForm('${orderId}')">닫기</button></div>
         <b>배송 등록 (주문번호: ${orderId})</b><br>
         <input id="courierName-${orderId}" placeholder="택배사">
         <input id="trackingNumber-${orderId}" placeholder="송장번호">
         <button onclick="createDelivery('${orderId}')">배송 등록</button>
       `;
+    }
+    function closeDeliveryForm(orderId) {
+      document.getElementById('delivery-form-row-' + orderId).style.display = 'none';
     }
     async function createDelivery(orderId) {
       const deliveryId = generateDeliveryId();
@@ -686,6 +698,7 @@
       row.style.display = '';
       const div = document.getElementById('designFormDiv-' + orderId);
       div.innerHTML = `
+        <div style='text-align:right'><button onclick="closeDesignForm('${orderId}')">닫기</button></div>
         <b>디자인 등록 (주문번호: ${orderId})</b><br>
         <input id="title-${orderId}" placeholder="디자인 제목">
         <input id="description-${orderId}" placeholder="설명">
@@ -693,6 +706,9 @@
         <input id="createdBy-${orderId}" placeholder="작성자">
         <button onclick="createDesign('${orderId}')">디자인 등록</button>
       `;
+    }
+    function closeDesignForm(orderId) {
+      document.getElementById('design-form-row-' + orderId).style.display = 'none';
     }
     async function createDesign(orderId) {
       const designId = generateDesignId();
