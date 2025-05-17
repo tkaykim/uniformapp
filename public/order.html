@@ -64,42 +64,22 @@
             <td>
               <button onclick="showPurchaseForm('${o.orderId}')">발주</button>
               <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
-              <select onchange="updatePurchaseStatus('${o.orderId}', null, this.value)" 
-                      style="color: ${getStatusColor(getLatestStatus('purchase', o.orderId))}">
-                <option value="발주전" ${getLatestStatus('purchase', o.orderId) === '발주전' ? 'selected' : ''}>발주전</option>
-                <option value="진행중" ${getLatestStatus('purchase', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
-                <option value="완료" ${getLatestStatus('purchase', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
-              </select>
+              <span id="purchaseStatus-${o.orderId}" style="color:gray;">-</span>
             </td>
             <td>
               <button onclick="showDesignForm('${o.orderId}')">디자인</button>
               <button onclick="toggleDesignList('${o.orderId}')">디자인목록</button>
-              <select onchange="updateDesignStatus('${o.orderId}', null, this.value)"
-                      style="color: ${getStatusColor(getLatestStatus('design', o.orderId))}">
-                <option value="착수전" ${getLatestStatus('design', o.orderId) === '착수전' ? 'selected' : ''}>착수전</option>
-                <option value="진행중" ${getLatestStatus('design', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
-                <option value="완료" ${getLatestStatus('design', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
-              </select>
+              <span id="designStatus-${o.orderId}" style="color:gray;">-</span>
             </td>
             <td>
               <button onclick="showPrintForm('${o.orderId}')">인쇄</button>
               <button onclick="togglePrintList('${o.orderId}')">인쇄목록</button>
-              <select onchange="updatePrintStatus('${o.orderId}', null, this.value)"
-                      style="color: ${getStatusColor(getLatestStatus('print', o.orderId))}">
-                <option value="발주전" ${getLatestStatus('print', o.orderId) === '발주전' ? 'selected' : ''}>발주전</option>
-                <option value="진행중" ${getLatestStatus('print', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
-                <option value="완료" ${getLatestStatus('print', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
-              </select>
+              <span id="printStatus-${o.orderId}" style="color:gray;">-</span>
             </td>
             <td>
               <button onclick="showDeliveryForm('${o.orderId}')">배송</button>
               <button onclick="toggleDeliveryList('${o.orderId}')">배송목록</button>
-              <select onchange="updateDeliveryStatus('${o.orderId}', null, this.value)"
-                      style="color: ${getStatusColor(getLatestStatus('delivery', o.orderId))}">
-                <option value="배송전" ${getLatestStatus('delivery', o.orderId) === '배송전' ? 'selected' : ''}>배송전</option>
-                <option value="진행중" ${getLatestStatus('delivery', o.orderId) === '진행중' ? 'selected' : ''}>진행중</option>
-                <option value="완료" ${getLatestStatus('delivery', o.orderId) === '완료' ? 'selected' : ''}>완료</option>
-              </select>
+              <span id="deliveryStatus-${o.orderId}" style="color:gray;">-</span>
             </td>
             <td>
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
