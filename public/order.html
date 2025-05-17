@@ -90,6 +90,15 @@
               <button onclick="editOrderPrompt('${o.orderId}')">수정</button>
               <button onclick="deleteOrder('${o.orderId}')">삭제</button>
             </td>
+            <td>
+              <button onclick="showCostForm('발주','${o.orderId}')">발주비용 추가</button>
+              <button onclick="showCostForm('디자인','${o.orderId}')">디자인비용 추가</button>
+              <button onclick="showCostForm('인쇄','${o.orderId}')">인쇄비용 추가</button>
+              <button onclick="showCostForm('배송','${o.orderId}')">배송비용 추가</button>
+              <button onclick="showCostForm('기타','${o.orderId}')">기타비용 추가</button>
+              <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
+              <span id="costSum-${o.orderId}">0</span>원
+            </td>
           </tr>
           <tr id="purchase-form-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="purchaseFormDiv-${o.orderId}"></div></td>
@@ -115,6 +124,12 @@
           <tr id="delivery-list-row-${o.orderId}" style="display:none;">
             <td colspan="10"><div id="deliveryListDiv-${o.orderId}"></div></td>
           </tr>
+          <tr id="cost-form-row-${o.orderId}" style="display:none;">
+            <td colspan="11"><div id="costFormDiv-${o.orderId}"></div></td>
+          </tr>
+          <tr id="cost-list-row-${o.orderId}" style="display:none;">
+            <td colspan="11"><div id="costListDiv-${o.orderId}"></div></td>
+          </tr>
         `;
       });
       tbody.innerHTML = html;
@@ -126,6 +141,7 @@
         updateDesignStatus(o.orderId);
         updatePrintStatus(o.orderId);
         updateDeliveryStatus(o.orderId);
+        updateCostSum(o.orderId);
       });
     }
     async function deleteOrder(orderId) {
@@ -1090,6 +1106,72 @@
         return;
       }
       await updatePrintStatus(orderId);
+    }
+
+    // 비용 폼 표시 함수
+    function showCostForm(type, orderId) {
+      document.querySelectorAll('[id^=cost-form-row-]').forEach(row => row.style.display = 'none');
+      const row = document.getElementById('cost-form-row-' + orderId);
+      row.style.display = '';
+      const div = document.getElementById('costFormDiv-' + orderId);
+      div.innerHTML = `
+        <b>${type} 비용 추가</b><br>
+        <input id="costTitle-${orderId}" placeholder="비용명">
+        <input id="costAmount-${orderId}" type="number" placeholder="금액">
+        <input id="costMemo-${orderId}" placeholder="비고">
+        <button onclick="createCost('${orderId}','${type}')">저장</button>
+        <button onclick="document.getElementById('cost-form-row-${orderId}').style.display='none'">취소</button>
+      `;
+    }
+    // 비용 등록 함수
+    async function createCost(orderId, type) {
+      const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+      const title = document.getElementById('costTitle-' + orderId).value;
+      const amount = parseInt(document.getElementById('costAmount-' + orderId).value) || 0;
+      const memo = document.getElementById('costMemo-' + orderId).value;
+      if (!title || !amount) { alert('비용명과 금액을 입력하세요'); return; }
+      const { error } = await sb.from('evCost').insert([{ costId, orderId, type, title, amount, memo }]);
+      if (error) { alert('비용 등록 실패: ' + error.message); return; }
+      document.getElementById('cost-form-row-' + orderId).style.display = 'none';
+      updateCostSum(orderId);
+      toggleCostList(orderId, true);
+    }
+    // 비용 내역 토글
+    async function toggleCostList(orderId, forceOpen) {
+      const row = document.getElementById('cost-list-row-' + orderId);
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evCost').select('*').eq('orderId', orderId).order('createdAt', { ascending: false });
+        const div = document.getElementById('costListDiv-' + orderId);
+        if (error) { div.innerHTML = '불러오기 실패: ' + error.message; return; }
+        if (!data.length) { div.innerHTML = '등록된 비용이 없습니다.'; return; }
+        div.innerHTML = `<b>비용 내역</b><br><table border="1"><tr><th>구분</th><th>비용명</th><th>금액</th><th>비고</th><th>관리</th></tr>` +
+          data.map(c => `
+            <tr>
+              <td>${c.type}</td>
+              <td>${c.title}</td>
+              <td>${c.amount}</td>
+              <td>${c.memo || ''}</td>
+              <td><button onclick="deleteCost('${c.costId}','${orderId}')">삭제</button></td>
+            </tr>
+          `).join('') + '</table>';
+      }
+    }
+    // 비용 삭제
+    async function deleteCost(costId, orderId) {
+      if (!confirm('정말 삭제?')) return;
+      const { error } = await sb.from('evCost').delete().eq('costId', costId);
+      if (error) { alert('삭제 실패: ' + error.message); return; }
+      updateCostSum(orderId);
+      toggleCostList(orderId, true);
+    }
+    // 비용합계 업데이트
+    async function updateCostSum(orderId) {
+      const { data, error } = await sb.from('evCost').select('amount').eq('orderId', orderId);
+      let sum = 0;
+      if (data && data.length) sum = data.reduce((a, b) => a + (b.amount || 0), 0);
+      document.getElementById('costSum-' + orderId).textContent = sum;
     }
 
     window.onload = () => showTab('orderTab');
