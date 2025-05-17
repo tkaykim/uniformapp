@@ -1135,10 +1135,13 @@
       toggleDeliveryList(orderId, true);
     }
     function collapseAll(orderId) {
-      document.getElementById('purchase-list-row-' + orderId).style.display = 'none';
-      document.getElementById('design-list-row-' + orderId).style.display = 'none';
-      document.getElementById('print-list-row-' + orderId).style.display = 'none';
-      document.getElementById('delivery-list-row-' + orderId).style.display = 'none';
+      const rows = [
+        document.getElementById('purchase-list-row-' + orderId),
+        document.getElementById('design-list-row-' + orderId),
+        document.getElementById('print-list-row-' + orderId),
+        document.getElementById('delivery-list-row-' + orderId)
+      ];
+      rows.forEach(row => { if (row) row.style.display = 'none'; });
     }
 
     // 상태 select에서 변경 시 DB에 즉시 반영하고 상태 span도 갱신
@@ -1204,6 +1207,7 @@
     // 비용 내역 토글
     async function toggleCostList(orderId, forceOpen) {
       const row = document.getElementById('cost-list-row-' + orderId);
+      if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
@@ -1211,7 +1215,7 @@
         const div = document.getElementById('costListDiv-' + orderId);
         if (error) { div.innerHTML = '불러오기 실패: ' + error.message; return; }
         if (!data.length) { div.innerHTML = '등록된 비용이 없습니다.'; return; }
-        div.innerHTML = `<b>비용 내역</b><br><table border="1"><tr><th>구분</th><th>비용명</th><th>금액</th><th>비고</th><th>관리</th></tr>` +
+        div.innerHTML = `<b>비용 내역</b><br><table border="1"><tr><th>구분</th><th>비용명</th><th>금액</th><th>비고</th><th>지출</th></tr>` +
           data.map(c => `
             <tr>
               <td>${c.type}</td>
@@ -1336,7 +1340,7 @@
     <table border="1"><thead>
       <tr>
         <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
-        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>관리</th>
+        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
   </div>
@@ -1373,5 +1377,4 @@
     </thead><tbody id="designList"></tbody></table>
   </div>
 </body>
-</html>
 </html>
