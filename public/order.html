@@ -1284,6 +1284,66 @@
       loadOrders(); // 기존 데이터 로딩 유지
       updateTabVisibility();
     };
+
+    async function togglePrintList(orderId, forceOpen) {
+      const row = document.getElementById('print-list-row-' + orderId);
+      if (!row) return;
+      if (forceOpen) row.style.display = '';
+      else row.style.display = row.style.display === 'none' ? '' : 'none';
+      if (row.style.display !== 'none') {
+        const { data, error } = await sb.from('evPrint')
+          .select('*')
+          .eq('orderId', orderId)
+          .order('createdAt', { ascending: false });
+        const div = document.getElementById('printListDiv-' + orderId);
+        if (error) {
+          div.innerHTML = '불러오기 실패: ' + error.message;
+          return;
+        }
+        if (!data.length) {
+          div.innerHTML = '등록된 인쇄가 없습니다.';
+          return;
+        }
+        div.innerHTML = `
+          <b>인쇄 목록</b><br>
+          <table border="1">
+            <tr>
+              <th>인쇄번호</th>
+              <th>인쇄방식</th>
+              <th>인쇄소명</th>
+              <th>인쇄소 연락처</th>
+              <th>납품주소</th>
+              <th>납기일</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+            ${data.map(p => `
+              <tr id="print-row-${p.printId}">
+                <td>${p.printId}</td>
+                <td><span class="editable" data-field="printMethod">${p.printMethod}</span></td>
+                <td><span class="editable" data-field="factoryName">${p.factoryName}</span></td>
+                <td><span class="editable" data-field="factoryContact">${p.factoryContact}</span></td>
+                <td><span class="editable" data-field="deliveryAddress">${p.deliveryAddress}</span></td>
+                <td><span class="editable" data-field="expectedDate">${p.expectedDate || ''}</span></td>
+                <td>
+                  <select onchange="changePrintStatus('${orderId}', '${p.printId}', this.value)"
+                          style="color: ${getStatusColor(p.printStatus)}">
+                    <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
+                  </select>
+                </td>
+                <td>
+                  <button onclick="togglePrintEdit('${p.printId}', '${orderId}')" id="edit-btn-${p.printId}">수정</button>
+                  <button onclick="savePrintEdit('${p.printId}', '${orderId}')" style="display:none" id="save-btn-${p.printId}">저장</button>
+                  <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
+      }
+    }
   </script>
 </head>
 <body>
