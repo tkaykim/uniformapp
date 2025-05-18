@@ -1289,11 +1289,9 @@
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
           if (role === '중간관리자') {
-            // '지출'(비용) 컬럼만 숨김 (마지막 컬럼)
             ths.forEach((th, i) => { if (i === 9) th.style.display = 'none'; });
             tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i === 9) td.style.display = 'none'; }); });
           } else if (role === '디자인관리자') {
-            // 주문번호(0), 단체명(1)만 보임
             ths.forEach((th, i) => { if (i !== 0 && i !== 1) th.style.display = 'none'; });
             tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 0 && i !== 1) td.style.display = 'none'; }); });
           }
@@ -1306,9 +1304,8 @@
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
           if (role === '디자인관리자') {
-            // 제품명(3), 색상(4)만 보임
-            ths.forEach((th, i) => { if (i !== 3 && i !== 4) th.style.display = 'none'; });
-            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 3 && i !== 4) td.style.display = 'none'; }); });
+            ths.forEach((th, i) => { if (i !== 3) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 3) td.style.display = 'none'; }); });
           }
         }
         // 디자인 목록
@@ -1318,7 +1315,6 @@
           const tds = designTable.querySelectorAll('tbody tr');
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
-          // 디자인관리자는 전체 컬럼 보임(기본)
         }
       }, 100);
     }
