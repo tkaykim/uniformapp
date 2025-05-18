@@ -46,6 +46,11 @@
       if(tab==='designTab') loadDesigns();
     }
 
+    // 숫자 포맷팅 함수 추가
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
     // 주문 CRUD
     async function createOrder() {
       const orderId = generateOrderId();
@@ -97,7 +102,7 @@
             <td>${o.representativeName || ''}</td>
             <td>${o.representativePhone || ''}</td>
             <td>${o.managerName || ''}</td>
-            <td>${o.totalPrice}</td>
+            <td>${formatNumber(o.totalPrice)}</td>
             <td>
               <button onclick="showPurchaseForm('${o.orderId}')">발주 추가</button>
               <button onclick="togglePurchaseList('${o.orderId}')">발주목록</button>
@@ -1238,7 +1243,7 @@
             <tr>
               <td>${c.type}</td>
               <td>${c.title}</td>
-              <td>${c.amount}</td>
+              <td>${formatNumber(c.amount)}</td>
               <td>${c.memo || ''}</td>
               <td><button onclick="deleteCost('${c.costId}','${orderId}')">삭제</button></td>
             </tr>
@@ -1258,7 +1263,7 @@
       const { data, error } = await sb.from('evCost').select('amount').eq('orderId', orderId);
       let sum = 0;
       if (data && data.length) sum = data.reduce((a, b) => a + (b.amount || 0), 0);
-      document.getElementById('costSum-' + orderId).textContent = sum;
+      document.getElementById('costSum-' + orderId).textContent = formatNumber(sum);
     }
 
     // 비용추가 버튼 토글 함수
