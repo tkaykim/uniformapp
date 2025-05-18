@@ -87,9 +87,20 @@
         tbody.innerHTML = '<tr><td colspan="10">불러오기 실패: '+error.message+'</td></tr>';
         return;
       }
+      // 모든 주문의 지출합계를 미리 가져오기
+      const costData = {};
+      const costRes = await sb.from('evCost').select('orderId, amount');
+      if (costRes.data) {
+        costRes.data.forEach(c => {
+          if (!costData[c.orderId]) costData[c.orderId] = 0;
+          costData[c.orderId] += c.amount || 0;
+        });
+      }
       // 주문 row HTML을 먼저 누적
       let html = '';
       data.forEach(o => {
+        const costSum = costData[o.orderId] || 0;
+        const profit = (o.totalPrice || 0) - costSum;
         html += `
           <tr>
             <td>${o.orderId}
@@ -135,19 +146,20 @@
                 </span>
               </span>
               <button onclick="toggleCostList('${o.orderId}')">비용내역</button>
-              <span id="costSum-${o.orderId}">0</span>원
+              <span id="costSum-${o.orderId}">${formatNumber(costSum)}</span>원
             </td>
+            <td><span id="profit-${o.orderId}">${formatNumber(profit)}</span>원</td>
           </tr>
-          <tr id="purchase-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="purchaseFormDiv-${o.orderId}"></div></td></tr>
-          <tr id="purchase-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="purchaseListDiv-${o.orderId}"></div></td></tr>
-          <tr id="design-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="designFormDiv-${o.orderId}"></div></td></tr>
-          <tr id="design-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="designListDiv-${o.orderId}"></div></td></tr>
-          <tr id="print-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="printFormDiv-${o.orderId}"></div></td></tr>
-          <tr id="print-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="printListDiv-${o.orderId}"></div></td></tr>
-          <tr id="delivery-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="deliveryFormDiv-${o.orderId}"></div></td></tr>
-          <tr id="delivery-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="deliveryListDiv-${o.orderId}"></div></td></tr>
-          <tr id="cost-form-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="costFormDiv-${o.orderId}"></div></td></tr>
-          <tr id="cost-list-row-${o.orderId}" style="display:none;"><td colspan="11"><div id="costListDiv-${o.orderId}"></div></td></tr>
+          <tr id="purchase-form-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="purchaseFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="purchase-list-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="purchaseListDiv-${o.orderId}"></div></td></tr>
+          <tr id="design-form-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="designFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="design-list-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="designListDiv-${o.orderId}"></div></td></tr>
+          <tr id="print-form-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="printFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="print-list-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="printListDiv-${o.orderId}"></div></td></tr>
+          <tr id="delivery-form-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="deliveryFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="delivery-list-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="deliveryListDiv-${o.orderId}"></div></td></tr>
+          <tr id="cost-form-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="costFormDiv-${o.orderId}"></div></td></tr>
+          <tr id="cost-list-row-${o.orderId}" style="display:none;"><td colspan="12"><div id="costListDiv-${o.orderId}"></div></td></tr>
         `;
       });
       tbody.innerHTML = html;
@@ -225,21 +237,40 @@
     // 발주 CRUD
     async function createPurchase() {
       const purchaseId = generatePurchaseId();
-      const { data, error } = await sb.from('evPurchase').insert([{
+      const sizes = [
+        "size_110","size_120","size_130","size_140","size_150","size_160",
+        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+        "size_3L","size_4L","size_5L","size_free","size_custom"
+      ];
+      const sizeData = {};
+      sizes.forEach(k => {
+        sizeData[k] = parseInt(document.getElementById(`${k}-${orderId}`).value) || 0;
+      });
+      const totalQuantity = sizes.reduce((sum, k) => sum + (sizeData[k] || 0), 0);
+      const purchaseCost = parseInt(document.getElementById('purchaseCost-' + orderId).value) || 0;
+      const { error } = await sb.from('evPurchase').insert([{
         purchaseId,
-        orderId: document.getElementById('purchaseOrderId').value,
-        groupName: document.getElementById('purchaseGroupName').value,
-        itemName: document.getElementById('itemName').value,
-        itemCode: document.getElementById('itemCode').value,
-        color: document.getElementById('color').value,
-        managerName: document.getElementById('purchaseManagerName').value,
-        totalQuantity: parseInt(document.getElementById('purchaseTotalQuantity').value) || 0,
+        orderId,
+        groupName: '',
+        itemName: document.getElementById('itemName-' + orderId).value,
+        itemCode: document.getElementById('itemCode-' + orderId).value,
+        color: document.getElementById('color-' + orderId).value,
+        managerName: document.getElementById('managerName-' + orderId).value,
+        ...sizeData,
+        totalQuantity,
         purchaseStatus: '발주전'
       }]);
+      // 비용이 0보다 크면 evCost에 자동 등록
+      if (purchaseCost > 0) {
+        const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+        await sb.from('evCost').insert([{ costId, orderId, type: '발주', title: '발주비용', amount: purchaseCost, memo: '' }]);
+      }
       if (error) alert('발주 등록 실패: ' + error.message);
       else {
         alert('발주 등록 성공');
-        loadPurchases();
+        togglePurchaseList(orderId, true);
+        updateCostSum(orderId);
       }
     }
     function generatePurchaseId() {
@@ -377,7 +408,7 @@
         <input id="itemCode-${orderId}" placeholder="제품코드">
         <input id="color-${orderId}" placeholder="색상">
         <input id="managerName-${orderId}" placeholder="담당자명">
-        <input id="purchaseCost-${orderId}" type="number" placeholder="발주비용" value="0">
+        <input id="purchaseCost-${orderId}" type="number" placeholder="발주비용" value="">
         <input id="totalQuantity-${orderId}" placeholder="총수량" readonly style="background-color:#f0f0f0"><br>
         <div>${sizeInputs}</div>
         <button onclick="createPurchase('${orderId}')">발주 등록</button>
@@ -385,121 +416,6 @@
     }
     function closePurchaseForm(orderId) {
       document.getElementById('purchase-form-row-' + orderId).style.display = 'none';
-    }
-    async function createPurchase(orderId) {
-      const purchaseId = generatePurchaseId();
-      const sizes = [
-        "size_110","size_120","size_130","size_140","size_150","size_160",
-        "size_XS","size_SS","size_S","size_M","size_L","size_XL",
-        "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
-        "size_3L","size_4L","size_5L","size_free","size_custom"
-      ];
-      const sizeData = {};
-      sizes.forEach(k => {
-        sizeData[k] = parseInt(document.getElementById(`${k}-${orderId}`).value) || 0;
-      });
-      const totalQuantity = sizes.reduce((sum, k) => sum + (sizeData[k] || 0), 0);
-      const { error } = await sb.from('evPurchase').insert([{
-        purchaseId,
-        orderId,
-        groupName: '',
-        itemName: document.getElementById('itemName-' + orderId).value,
-        itemCode: document.getElementById('itemCode-' + orderId).value,
-        color: document.getElementById('color-' + orderId).value,
-        managerName: document.getElementById('managerName-' + orderId).value,
-        ...sizeData,
-        totalQuantity,
-        purchaseStatus: '발주전'
-      }]);
-      if (error) alert('발주 등록 실패: ' + error.message);
-      else {
-        alert('발주 등록 성공');
-        togglePurchaseList(orderId, true);
-      }
-    }
-    async function togglePurchaseList(orderId, forceOpen) {
-      const row = document.getElementById('purchase-list-row-' + orderId);
-      if (!row) return;
-      if (forceOpen) row.style.display = '';
-      else row.style.display = row.style.display === 'none' ? '' : 'none';
-      if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evPurchase')
-          .select('*')
-          .eq('orderId', orderId)
-          .order('createdAt', { ascending: false });
-        const div = document.getElementById('purchaseListDiv-' + orderId);
-        if (error) {
-          div.innerHTML = '불러오기 실패: ' + error.message;
-          return;
-        }
-        if (!data.length) {
-          div.innerHTML = '등록된 발주가 없습니다.';
-          return;
-        }
-
-        const sizes = [
-          "size_110","size_120","size_130","size_140","size_150","size_160",
-          "size_XS","size_SS","size_S","size_M","size_L","size_XL",
-          "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
-          "size_3L","size_4L","size_5L","size_free","size_custom"
-        ];
-
-        const sizeHeaders = sizes.map(k => `<th>${k.replace('size_','').toUpperCase()}</th>`).join('');
-
-        div.innerHTML = `
-          <b>발주 목록</b><br>
-          <table border="1">
-            <tr>
-              <th>발주번호</th>
-              <th>제품명</th>
-              <th>제품코드</th>
-              <th>색상</th>
-              <th>담당자</th>
-              <th>총수량</th>
-              <th>상태</th>
-              ${sizeHeaders}
-              <th>관리</th>
-            </tr>
-            ${data.map(p => `
-              <tr id="purchase-row-${p.purchaseId}">
-                <td>${p.purchaseId}</td>
-                <td><span class="editable" data-field="itemName">${p.itemName}</span></td>
-                <td><span class="editable" data-field="itemCode">${p.itemCode}</span></td>
-                <td><span class="editable" data-field="color">${p.color}</span></td>
-                <td><span class="editable" data-field="managerName">${p.managerName}</span></td>
-                <td><span class="total-quantity">${p.totalQuantity}</span></td>
-                <td>
-                  <select onchange="changePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
-                          style="color: ${getStatusColor(p.purchaseStatus)}">
-                    <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                    <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                    <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
-                ${sizes.map(k => `<td><span class="editable" data-field="${k}">${p[k] || 0}</span></td>`).join('')}
-                <td>
-                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')" id="edit-btn-${p.purchaseId}">수정</button>
-                  <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
-                  <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
-            `).join('')}
-          </table>
-        `;
-      }
-    }
-    async function deletePurchase(purchaseId, orderId) {
-      if (!confirm('정말 삭제?')) return;
-      const { error } = await sb.from('evPurchase').delete().eq('purchaseId', purchaseId);
-      if (error) alert('삭제 실패: ' + error.message);
-      else togglePurchaseList(orderId, true);
-    }
-    async function editPurchasePrompt(purchaseId, orderId) {
-      const newName = prompt('새 제품명 입력');
-      if (!newName) return;
-      const { error } = await sb.from('evPurchase').update({ itemName: newName }).eq('purchaseId', purchaseId);
-      if (error) alert('수정 실패: ' + error.message);
-      else togglePurchaseList(orderId, true);
     }
 
     // 인쇄 폼/목록
@@ -516,7 +432,7 @@
         <input id="factoryContact-${orderId}" placeholder="인쇄소 연락처">
         <input id="deliveryAddress-${orderId}" placeholder="납품주소">
         <input id="expectedDate-${orderId}" type="date" placeholder="납기일">
-        <input id="printCost-${orderId}" type="number" placeholder="인쇄비용" value="0">
+        <input id="printCost-${orderId}" type="number" placeholder="인쇄비용" value="">
         <button onclick="createPrint('${orderId}')">인쇄 등록</button>
       `;
     }
@@ -525,6 +441,7 @@
     }
     async function createPrint(orderId) {
       const printId = generatePrintId();
+      const printCost = parseInt(document.getElementById('printCost-' + orderId).value) || 0;
       const { error } = await sb.from('evPrint').insert([{
         printId,
         orderId,
@@ -535,10 +452,16 @@
         expectedDate: document.getElementById('expectedDate-' + orderId).value,
         printStatus: '발주전'
       }]);
+      // 비용이 0보다 크면 evCost에 자동 등록
+      if (printCost > 0) {
+        const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+        await sb.from('evCost').insert([{ costId, orderId, type: '인쇄', title: '인쇄비용', amount: printCost, memo: '' }]);
+      }
       if (error) alert('인쇄 등록 실패: ' + error.message);
       else {
         alert('인쇄 등록 성공');
         togglePrintList(orderId, true);
+        updateCostSum(orderId);
       }
     }
     function generatePrintId() {
@@ -632,7 +555,7 @@
         <b>배송 등록 (주문번호: ${orderId})</b><br>
         <input id="courierName-${orderId}" placeholder="택배사">
         <input id="trackingNumber-${orderId}" placeholder="송장번호">
-        <input id="deliveryCost-${orderId}" type="number" placeholder="배송비용" value="0">
+        <input id="deliveryCost-${orderId}" type="number" placeholder="배송비용" value="">
         <button onclick="createDelivery('${orderId}')">배송 등록</button>
       `;
     }
@@ -641,6 +564,7 @@
     }
     async function createDelivery(orderId) {
       const deliveryId = generateDeliveryId();
+      const deliveryCost = parseInt(document.getElementById('deliveryCost-' + orderId).value) || 0;
       const { error } = await sb.from('evDelivery').insert([{
         deliveryId,
         orderId,
@@ -648,10 +572,16 @@
         trackingNumber: document.getElementById('trackingNumber-' + orderId).value,
         deliveryStatus: '배송전'
       }]);
+      // 비용이 0보다 크면 evCost에 자동 등록
+      if (deliveryCost > 0) {
+        const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+        await sb.from('evCost').insert([{ costId, orderId, type: '배송', title: '배송비용', amount: deliveryCost, memo: '' }]);
+      }
       if (error) alert('배송 등록 실패: ' + error.message);
       else {
         alert('배송 등록 성공');
         toggleDeliveryList(orderId, true);
+        updateCostSum(orderId);
       }
     }
     function generateDeliveryId() {
@@ -747,7 +677,7 @@
         <input id="description-${orderId}" placeholder="설명">
         <input id="driveLink-${orderId}" placeholder="구글드라이브 링크">
         <input id="createdBy-${orderId}" placeholder="작성자">
-        <input id="designCost-${orderId}" type="number" placeholder="디자인비용" value="0">
+        <input id="designCost-${orderId}" type="number" placeholder="디자인비용" value="">
         <button onclick="createDesign('${orderId}')">디자인 등록</button>
       `;
     }
@@ -756,6 +686,7 @@
     }
     async function createDesign(orderId) {
       const designId = generateDesignId();
+      const designCost = parseInt(document.getElementById('designCost-' + orderId).value) || 0;
       const { error } = await sb.from('evDesign').insert([{
         designId,
         orderId,
@@ -765,10 +696,16 @@
         createdBy: document.getElementById('createdBy-' + orderId).value,
         designStatus: '착수전'
       }]);
+      // 비용이 0보다 크면 evCost에 자동 등록
+      if (designCost > 0) {
+        const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+        await sb.from('evCost').insert([{ costId, orderId, type: '디자인', title: '디자인비용', amount: designCost, memo: '' }]);
+      }
       if (error) alert('디자인 등록 실패: ' + error.message);
       else {
         alert('디자인 등록 성공');
         toggleDesignList(orderId, true);
+        updateCostSum(orderId);
       }
     }
     async function toggleDesignList(orderId, forceOpen) {
@@ -1359,7 +1296,7 @@
     <table border="1"><thead>
       <tr>
         <th>주문번호</th><th>단체명</th><th>대표자명</th><th>대표자연락처</th><th>담당자</th><th>총금액</th>
-        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th>
+        <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th><th>순수익</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
   </div>
