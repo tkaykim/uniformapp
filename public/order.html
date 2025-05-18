@@ -404,20 +404,32 @@
     // 디자인 CRUD
     async function createDesign() {
       const designId = generateDesignId();
-      const { data, error } = await sb.from('evDesign').insert([{
-        designId,
-        orderId: document.getElementById('designOrderId').value,
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        driveLink: document.getElementById('driveLink').value,
-        createdBy: document.getElementById('createdBy').value,
-        designStatus: '착수전'
-      }]);
+      const designCost = parseInt(document.getElementById('designCost-' + orderId).value) || 0;
+      const title = document.getElementById('title-' + orderId).value;
+      const description = document.getElementById('description-' + orderId).value;
+      const driveLink = document.getElementById('driveLink-' + orderId).value;
+      const createdBy = document.getElementById('createdBy-' + orderId).value;
+      // evOrder에서 managerName 찾기
+      let managerName = '';
+      try {
+        const { data } = await sb.from('evOrder').select('managerName').eq('orderId', orderId).single();
+        managerName = data?.managerName || '';
+      } catch {}
+      // Supabase 등록
+      const { error } = await sb.from('evDesign').insert([{ designId, orderId, title, description, driveLink, createdBy, designStatus: '착수전' }]);
+      // 구글폼 연동 (CORS 없이 등록)
+      await addDesignToGoogleForm({ orderId, managerName, driveLink, createdBy, designStatus: '착수전' });
+      // 비용 처리 등 기존 코드 유지
+      if (designCost > 0) {
+        const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
+        await sb.from('evCost').insert([{ costId, orderId, type: '디자인', title: '디자인비용', amount: designCost, memo: '' }]);
+      }
       if (error) alert('디자인 등록 실패: ' + error.message);
       else {
         alert('디자인 등록 성공');
-      loadDesigns();
-    }
+        toggleDesignList(orderId, true);
+        updateCostSum(orderId);
+      }
     }
     function generateDesignId() {
       const d = new Date();
@@ -797,8 +809,8 @@
       } catch {}
       // Supabase 등록
       const { error } = await sb.from('evDesign').insert([{ designId, orderId, title, description, driveLink, createdBy, designStatus: '착수전' }]);
-      // 구글시트 연동 (GET 방식)
-      await addDesignToSheet({ orderId, managerName, driveLink, createdBy, designStatus: '착수전' });
+      // 구글폼 연동 (CORS 없이 등록)
+      await addDesignToGoogleForm({ orderId, managerName, driveLink, createdBy, designStatus: '착수전' });
       // 비용 처리 등 기존 코드 유지
       if (designCost > 0) {
         const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
@@ -1506,6 +1518,31 @@
           status: row[5]
         }));
       } catch (e) { alert('구글시트 연동 실패(조회): '+e); return []; }
+    }
+
+    // 구글폼 formResponse URL 및 entry.xxx 값(아래는 예시, 실제 값으로 교체 필요)
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/폼ID/formResponse';
+    const ENTRY_ORDERID = 'entry.123456';      // 주문번호
+    const ENTRY_MANAGER = 'entry.234567';      // 담당자명
+    const ENTRY_DRIVELINK = 'entry.345678';   // 드라이브링크
+    const ENTRY_CREATEDBY = 'entry.456789';   // 디자인담당자
+    const ENTRY_STATUS = 'entry.567890';      // 상태
+
+    // 구글폼에 row 추가
+    async function addDesignToGoogleForm({orderId, managerName, driveLink, createdBy, designStatus}) {
+      try {
+        const formData = new FormData();
+        formData.append(ENTRY_ORDERID, orderId);
+        formData.append(ENTRY_MANAGER, managerName);
+        formData.append(ENTRY_DRIVELINK, driveLink);
+        formData.append(ENTRY_CREATEDBY, createdBy);
+        formData.append(ENTRY_STATUS, designStatus);
+        await fetch(GOOGLE_FORM_URL, {
+          method: 'POST',
+          body: formData,
+          mode: 'no-cors'
+        });
+      } catch (e) { alert('구글폼 연동 실패(등록): '+e); }
     }
   </script>
 </head>
