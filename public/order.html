@@ -237,6 +237,27 @@
     // 발주 CRUD
     async function createPurchase() {
       const purchaseId = generatePurchaseId();
+      const { data, error } = await sb.from('evPurchase').insert([{
+        purchaseId,
+        orderId: document.getElementById('purchaseOrderId').value,
+        groupName: document.getElementById('purchaseGroupName').value,
+        itemName: document.getElementById('itemName').value,
+        itemCode: document.getElementById('itemCode').value,
+        color: document.getElementById('color').value,
+        managerName: document.getElementById('purchaseManagerName').value,
+        totalQuantity: parseInt(document.getElementById('purchaseTotalQuantity').value) || 0,
+        purchaseStatus: '발주전'
+      }]);
+      if (error) alert('발주 등록 실패: ' + error.message);
+      else {
+        alert('발주 등록 성공');
+        loadPurchases();
+      }
+    }
+
+    // 주문별 발주 등록 폼용 (파라미터: orderId)
+    async function createPurchase(orderId) {
+      const purchaseId = generatePurchaseId();
       const sizes = [
         "size_110","size_120","size_130","size_140","size_150","size_160",
         "size_XS","size_SS","size_S","size_M","size_L","size_XL",
