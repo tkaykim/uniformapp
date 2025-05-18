@@ -62,7 +62,7 @@
         representativePhone: document.getElementById('representativePhone').value,
         managerName: document.getElementById('managerName').value,
         totalPrice: parseInt(document.getElementById('totalPrice').value) || 0,
-        orderStatus: '주문접수'
+        orderStatus: '상담중'
       }]);
       if (error) alert('주문 등록 실패: ' + error.message);
       else {
@@ -609,7 +609,8 @@
                   <select onchange="changePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
                           style="color: ${getStatusColor(p.purchaseStatus)}">
                     <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                    <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="발주요청" ${p.purchaseStatus === '발주요청' ? 'selected' : ''}>발주요청</option>
+                    <option value="결제대기중" ${p.purchaseStatus === '결제대기중' ? 'selected' : ''}>결제대기중</option>
                     <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
                   </select>
                 </td>
@@ -665,7 +666,7 @@
         orderId,
         courierName: document.getElementById('courierName-' + orderId).value,
         trackingNumber: document.getElementById('trackingNumber-' + orderId).value,
-        deliveryStatus: '배송전'
+        deliveryStatus: '발주처->인쇄소 배송중'
       }]);
       // 비용이 0보다 크면 evCost에 자동 등록
       if (deliveryCost > 0) {
@@ -729,9 +730,9 @@
                 <td>
                   <select onchange="changeDeliveryStatus('${orderId}', '${d.deliveryId}', this.value)"
                           style="color: ${getStatusColor(d.deliveryStatus)}">
-                    <option value="배송전" ${d.deliveryStatus === '배송전' ? 'selected' : ''}>배송전</option>
-                    <option value="진행중" ${d.deliveryStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                    <option value="완료" ${d.deliveryStatus === '완료' ? 'selected' : ''}>완료</option>
+                    <option value="발주처->인쇄소 배송중" ${d.deliveryStatus === '발주처->인쇄소 배송중' ? 'selected' : ''}>발주처->인쇄소 배송중</option>
+                    <option value="인쇄소->사무실 배송완료" ${d.deliveryStatus === '인쇄소->사무실 배송완료' ? 'selected' : ''}>인쇄소->사무실 배송완료</option>
+                    <option value="고객배송완료" ${d.deliveryStatus === '고객배송완료' ? 'selected' : ''}>고객배송완료</option>
               </select>
             </td>
                 <td>
@@ -845,8 +846,10 @@
                   <select onchange="changeDesignStatus('${orderId}', '${d.designId}', this.value)"
                           style="color: ${getStatusColor(d.designStatus)}">
                     <option value="착수전" ${d.designStatus === '착수전' ? 'selected' : ''}>착수전</option>
-                    <option value="진행중" ${d.designStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                    <option value="완료" ${d.designStatus === '완료' ? 'selected' : ''}>완료</option>
+                    <option value="착수요청" ${d.designStatus === '착수요청' ? 'selected' : ''}>착수요청</option>
+                    <option value="수정요청" ${d.designStatus === '수정요청' ? 'selected' : ''}>수정요청</option>
+                    <option value="작업완료" ${d.designStatus === '작업완료' ? 'selected' : ''}>작업완료</option>
+                    <option value="확정" ${d.designStatus === '확정' ? 'selected' : ''}>확정</option>
               </select>
             </td>
                 <td>
@@ -1230,6 +1233,16 @@
       }
       await updatePrintStatus(orderId);
     }
+    async function changeDeliveryStatus(orderId, deliveryId, newStatus) {
+      const { error } = await sb.from('evDelivery')
+        .update({ deliveryStatus: newStatus })
+        .eq('deliveryId', deliveryId);
+      if (error) {
+        alert('상태 변경 실패: ' + error.message);
+        return;
+      }
+      await updateDeliveryStatus(orderId);
+    }
 
     // 비용 폼 표시 함수
     function showCostForm(type, orderId) {
@@ -1412,8 +1425,10 @@
                   <select onchange="changePrintStatus('${orderId}', '${p.printId}', this.value)"
                           style="color: ${getStatusColor(p.printStatus)}">
                     <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                    <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                    <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
+                    <option value="발주요청" ${p.printStatus === '발주요청' ? 'selected' : ''}>발주요청</option>
+                    <option value="발주완료" ${p.printStatus === '발주완료' ? 'selected' : ''}>발주완료</option>
+                    <option value="작업완료" ${p.printStatus === '작업완료' ? 'selected' : ''}>작업완료</option>
+                    <option value="배송완료" ${p.printStatus === '배송완료' ? 'selected' : ''}>배송완료</option>
                   </select>
                 </td>
                 <td>
