@@ -471,60 +471,72 @@
         String(d.getDate()).padStart(2,'0') + 
         '_PRT' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
     }
-    async function togglePrintList(orderId, forceOpen) {
-      const row = document.getElementById('print-list-row-' + orderId);
+    async function togglePurchaseList(orderId, forceOpen) {
+      const row = document.getElementById('purchase-list-row-' + orderId);
       if (!row) return;
       if (forceOpen) row.style.display = '';
       else row.style.display = row.style.display === 'none' ? '' : 'none';
       if (row.style.display !== 'none') {
-        const { data, error } = await sb.from('evPrint')
+        const { data, error } = await sb.from('evPurchase')
           .select('*')
           .eq('orderId', orderId)
           .order('createdAt', { ascending: false });
-        const div = document.getElementById('printListDiv-' + orderId);
+        const div = document.getElementById('purchaseListDiv-' + orderId);
         if (error) {
           div.innerHTML = '불러오기 실패: ' + error.message;
           return;
         }
         if (!data.length) {
-          div.innerHTML = '등록된 인쇄가 없습니다.';
+          div.innerHTML = '등록된 발주가 없습니다.';
           return;
         }
+
+        const sizes = [
+          "size_110","size_120","size_130","size_140","size_150","size_160",
+          "size_XS","size_SS","size_S","size_M","size_L","size_XL",
+          "size_2XL","size_3XL","size_4XL","size_5XL","size_LL",
+          "size_3L","size_4L","size_5L","size_free","size_custom"
+        ];
+
+        const sizeHeaders = sizes.map(k => `<th>${k.replace('size_','').toUpperCase()}</th>`).join('');
+
         div.innerHTML = `
-          <b>인쇄 목록</b><br>
+          <b>발주 목록</b><br>
           <table border="1">
             <tr>
-              <th>인쇄번호</th>
-              <th>인쇄방식</th>
-              <th>인쇄소명</th>
-              <th>인쇄소 연락처</th>
-              <th>납품주소</th>
-              <th>납기일</th>
+              <th>발주번호</th>
+              <th>제품명</th>
+              <th>제품코드</th>
+              <th>색상</th>
+              <th>담당자</th>
+              <th>총수량</th>
               <th>상태</th>
+              ${sizeHeaders}
               <th>관리</th>
             </tr>
             ${data.map(p => `
-              <tr id="print-row-${p.printId}">
-                <td>${p.printId}</td>
-                <td><span class="editable" data-field="printMethod">${p.printMethod}</span></td>
-                <td><span class="editable" data-field="factoryName">${p.factoryName}</span></td>
-                <td><span class="editable" data-field="factoryContact">${p.factoryContact}</span></td>
-                <td><span class="editable" data-field="deliveryAddress">${p.deliveryAddress}</span></td>
-                <td><span class="editable" data-field="expectedDate">${p.expectedDate || ''}</span></td>
+              <tr id="purchase-row-${p.purchaseId}">
+                <td>${p.purchaseId}</td>
+                <td><span class="editable" data-field="itemName">${p.itemName}</span></td>
+                <td><span class="editable" data-field="itemCode">${p.itemCode}</span></td>
+                <td><span class="editable" data-field="color">${p.color}</span></td>
+                <td><span class="editable" data-field="managerName">${p.managerName}</span></td>
+                <td><span class="total-quantity">${p.totalQuantity}</span></td>
                 <td>
-                  <select onchange="changePrintStatus('${orderId}', '${p.printId}', this.value)"
-                          style="color: ${getStatusColor(p.printStatus)}">
-                    <option value="발주전" ${p.printStatus === '발주전' ? 'selected' : ''}>발주전</option>
-                    <option value="진행중" ${p.printStatus === '진행중' ? 'selected' : ''}>진행중</option>
-                    <option value="완료" ${p.printStatus === '완료' ? 'selected' : ''}>완료</option>
+                  <select onchange="changePurchaseStatus('${orderId}', '${p.purchaseId}', this.value)" 
+                          style="color: ${getStatusColor(p.purchaseStatus)}">
+                    <option value="발주전" ${p.purchaseStatus === '발주전' ? 'selected' : ''}>발주전</option>
+                    <option value="진행중" ${p.purchaseStatus === '진행중' ? 'selected' : ''}>진행중</option>
+                    <option value="완료" ${p.purchaseStatus === '완료' ? 'selected' : ''}>완료</option>
                   </select>
                 </td>
+                ${sizes.map(k => `<td><span class="editable" data-field="${k}">${p[k] || 0}</span></td>`).join('')}
                 <td>
-                  <button onclick="togglePrintEdit('${p.printId}', '${orderId}')" id="edit-btn-${p.printId}">수정</button>
-                  <button onclick="savePrintEdit('${p.printId}', '${orderId}')" style="display:none" id="save-btn-${p.printId}">저장</button>
-                  <button onclick="deletePrint('${p.printId}','${orderId}')">삭제</button>
-            </td>
-          </tr>
+                  <button onclick="togglePurchaseEdit('${p.purchaseId}', '${orderId}')" id="edit-btn-${p.purchaseId}">수정</button>
+                  <button onclick="savePurchaseEdit('${p.purchaseId}', '${orderId}')" style="display:none" id="save-btn-${p.purchaseId}">저장</button>
+                  <button onclick="deletePurchase('${p.purchaseId}','${orderId}')">삭제</button>
+                </td>
+              </tr>
             `).join('')}
           </table>
         `;
