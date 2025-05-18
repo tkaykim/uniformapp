@@ -96,9 +96,15 @@
           costData[c.orderId] += c.amount || 0;
         });
       }
+      // 담당자 필터 적용
+      const filter = document.getElementById('managerFilter')?.value?.trim();
+      let filteredData = data;
+      if (filter) {
+        filteredData = data.filter(o => (o.managerName || '').includes(filter));
+      }
       // 주문 row HTML을 먼저 누적
       let html = '';
-      data.forEach(o => {
+      filteredData.forEach(o => {
         const costSum = costData[o.orderId] || 0;
         const profit = (o.totalPrice || 0) - costSum;
         html += `
@@ -164,7 +170,7 @@
       });
       tbody.innerHTML = html;
       // 모든 주문에 대해 collapseAll을 한 번 더 호출 (실제 DOM에 반영된 후)
-      data.forEach(o => {
+      filteredData.forEach(o => {
         collapseAll(o.orderId);
         // 각 파트별 상태 업데이트
         updatePurchaseStatus(o.orderId);
@@ -173,7 +179,63 @@
         updateDeliveryStatus(o.orderId);
         updateCostSum(o.orderId);
       });
+      // 담당자별 집계 테이블 렌더링
+      renderManagerSummary(filteredData, costData);
     }
+
+    // 담당자별 집계 테이블 함수 추가
+    function renderManagerSummary(data, costData) {
+      // 담당자별 집계
+      const summary = {};
+      data.forEach(o => {
+        const m = o.managerName || '미지정';
+        if (!summary[m]) summary[m] = { totalPrice: 0, totalCost: 0, profit: 0, orders: [] };
+        summary[m].totalPrice += o.totalPrice || 0;
+        summary[m].orders.push(o);
+      });
+      // 지출 합산
+      Object.keys(summary).forEach(m => {
+        summary[m].orders.forEach(o => {
+          summary[m].totalCost += costData[o.orderId] || 0;
+        });
+        summary[m].profit = summary[m].totalPrice - summary[m].totalCost;
+      });
+      // 날짜별 정렬
+      Object.keys(summary).forEach(m => {
+        summary[m].orders.sort((a, b) => (a.orderDate > b.orderDate ? 1 : -1));
+      });
+      // 테이블 생성
+      let html = '<h3>담당자별 집계</h3>';
+      html += '<table border="1"><tr><th>담당자</th><th>총매출</th><th>총지출</th><th>총순수익</th></tr>';
+      Object.keys(summary).forEach(m => {
+        html += `<tr>
+          <td>${m}</td>
+          <td>${formatNumber(summary[m].totalPrice)}</td>
+          <td>${formatNumber(summary[m].totalCost)}</td>
+          <td>${formatNumber(summary[m].profit)}</td>
+        </tr>`;
+        // 날짜별 상세
+        html += `<tr><td colspan="4">
+          <table border="1" style="margin:5px 0;">
+            <tr><th>주문일</th><th>주문번호</th><th>매출</th><th>지출</th><th>순수익</th></tr>
+            ${summary[m].orders.map(o => `
+              <tr>
+                <td>${o.orderDate}</td>
+                <td>${o.orderId}</td>
+                <td>${formatNumber(o.totalPrice)}</td>
+                <td>${formatNumber(costData[o.orderId] || 0)}</td>
+                <td>${formatNumber((o.totalPrice || 0) - (costData[o.orderId] || 0))}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </td></tr>`;
+      });
+      html += '</table>';
+      // 주문 목록 아래에 표시
+      const summaryDiv = document.getElementById('managerSummary');
+      if (summaryDiv) summaryDiv.innerHTML = html;
+    }
+
     async function deleteOrder(orderId) {
       if (!confirm('정말 이 주문을 삭제하시겠습니까?\n연관된 발주, 디자인, 인쇄, 배송 데이터는 유지됩니다.')) return;
 
@@ -1378,6 +1440,7 @@
   <!-- 주문관리 -->
   <div id="orderTab" class="tab" style="display:block;">
     <h2>주문 등록</h2>
+    <input id="managerFilter" placeholder="담당자명 입력" oninput="loadOrders()" style="margin-bottom:5px;">
     <input id="orderDate" type="date" value="2024-05-20">
     <input id="groupName" placeholder="단체명">
     <input id="representativeName" placeholder="대표자명">
@@ -1392,6 +1455,7 @@
         <th>발주</th><th>디자인</th><th>인쇄</th><th>배송</th><th>지출</th><th>순수익</th>
       </tr>
     </thead><tbody id="orderList"></tbody></table>
+    <div id="managerSummary" style="margin-top:20px;"></div>
   </div>
 
   <!-- 발주관리 -->
