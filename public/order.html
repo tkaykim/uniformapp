@@ -761,18 +761,20 @@
     }
 
     // 디자인 폼/목록
-    function showDesignForm(orderId) {
+    async function showDesignForm(orderId) {
       document.querySelectorAll('[id^=design-form-row-]').forEach(row => row.style.display = 'none');
       const row = document.getElementById('design-form-row-' + orderId);
       row.style.display = '';
       const div = document.getElementById('designFormDiv-' + orderId);
+      const managers = await fetchDesignManagers();
+      const options = managers.map(m => `<option value="${m.name}">${m.name} (${m.role})</option>`).join('');
       div.innerHTML = `
         <div style='text-align:right'><button onclick="closeDesignForm('${orderId}')">닫기</button></div>
         <b>디자인 등록 (주문번호: ${orderId})</b><br>
         <input id="title-${orderId}" placeholder="디자인 제목">
         <input id="description-${orderId}" placeholder="설명">
         <input id="driveLink-${orderId}" placeholder="구글드라이브 링크">
-        <input id="createdBy-${orderId}" placeholder="작성자">
+        <select id="createdBy-${orderId}">${options}</select>
         <input id="designCost-${orderId}" type="number" placeholder="디자인비용" value="">
         <button onclick="createDesign('${orderId}')">디자인 등록</button>
       `;
@@ -1056,12 +1058,16 @@
       const editBtn = document.getElementById('edit-btn-' + designId);
       const saveBtn = document.getElementById('save-btn-' + designId);
       
-      editableSpans.forEach(span => {
+      editableSpans.forEach(async span => {
         const currentValue = span.textContent;
         const field = span.getAttribute('data-field');
-        span.innerHTML = `<input type="text" value="${currentValue}" 
-                               id="edit-${field}-${designId}" 
-                               style="width:100%">`;
+        if (field === 'createdBy') {
+          const managers = await fetchDesignManagers();
+          const options = managers.map(m => `<option value=\"${m.name}\" ${m.name===currentValue?'selected':''}>${m.name} (${m.role})</option>`).join('');
+          span.innerHTML = `<select id=\"edit-createdBy-${designId}\">${options}</select>`;
+        } else {
+          span.innerHTML = `<input type="text" value="${currentValue}" id="edit-${field}-${designId}" style="width:100%">`;
+        }
       });
 
       editBtn.style.display = 'none';
@@ -1441,6 +1447,16 @@
           </table>
         `;
       }
+    }
+
+    // 디자인 담당자 목록 불러오기
+    async function fetchDesignManagers() {
+      const { data, error } = await sb
+        .from('adminUser')
+        .select('name, role')
+        .in('role', ['슈퍼관리자', '디자인관리자', '중간관리자']);
+      if (error) return [];
+      return data;
     }
   </script>
 </head>
