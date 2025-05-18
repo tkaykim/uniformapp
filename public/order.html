@@ -785,16 +785,15 @@
     async function createDesign(orderId) {
       const designId = generateDesignId();
       const designCost = parseInt(document.getElementById('designCost-' + orderId).value) || 0;
-      const { error } = await sb.from('evDesign').insert([{
-        designId,
-        orderId,
-        title: document.getElementById('title-' + orderId).value,
-        description: document.getElementById('description-' + orderId).value,
-        driveLink: document.getElementById('driveLink-' + orderId).value,
-        createdBy: document.getElementById('createdBy-' + orderId).value,
-        designStatus: '착수전'
-      }]);
-      // 비용이 0보다 크면 evCost에 자동 등록
+      const title = document.getElementById('title-' + orderId).value;
+      const description = document.getElementById('description-' + orderId).value;
+      const driveLink = document.getElementById('driveLink-' + orderId).value;
+      const createdBy = document.getElementById('createdBy-' + orderId).value;
+      // Supabase 등록
+      const { error } = await sb.from('evDesign').insert([{ designId, orderId, title, description, driveLink, createdBy, designStatus: '착수전' }]);
+      // 구글시트 연동
+      await addDesignToSheet({ orderId, managerName: '', folderUrl: driveLink, designerName: createdBy, status: '착수전' });
+      // 비용 처리 등 기존 코드 유지
       if (designCost > 0) {
         const costId = 'COST' + Date.now() + Math.floor(Math.random()*1000);
         await sb.from('evCost').insert([{ costId, orderId, type: '디자인', title: '디자인비용', amount: designCost, memo: '' }]);
@@ -1223,6 +1222,8 @@
       const { error } = await sb.from('evDesign')
         .update({ designStatus: newStatus })
         .eq('designId', designId);
+      // 구글시트 연동
+      await updateDesignInSheet({ orderId, status: newStatus });
       if (error) {
         alert('상태 변경 실패: ' + error.message);
         return;
@@ -1457,6 +1458,51 @@
         .in('role', ['슈퍼관리자', '디자인관리자', '중간관리자']);
       if (error) return [];
       return data;
+    }
+
+    // 구글시트 Web App URL
+    const SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyYQG18XHhAXP6e0s14ALA5Of3eVf1CSaSLenl89atQFlwXgKitwlrRQBDU-XBSe-jA/exec';
+
+    // 구글시트에 디자인 row 추가
+    async function addDesignToSheet({orderId, managerName, folderUrl, designerName, status}) {
+      try {
+        await fetch(SHEET_WEBAPP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId,
+            managerName,
+            folderUrl,
+            designerName,
+            status
+          })
+        });
+      } catch (e) { alert('구글시트 연동 실패(등록): '+e); }
+    }
+    // 구글시트에 디자인 row 수정(상태/담당자)
+    async function updateDesignInSheet({orderId, status, designerName}) {
+      try {
+        await fetch(SHEET_WEBAPP_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, status, designerName })
+        });
+      } catch (e) { alert('구글시트 연동 실패(수정): '+e); }
+    }
+    // 구글시트에서 디자인 목록 불러오기
+    async function fetchDesignsFromSheet() {
+      try {
+        const res = await fetch(SHEET_WEBAPP_URL);
+        const data = await res.json();
+        return data.slice(1).map(row => ({
+          timestamp: row[0],
+          orderId: row[1],
+          managerName: row[2],
+          folderUrl: row[3],
+          designerName: row[4],
+          status: row[5]
+        }));
+      } catch (e) { alert('구글시트 연동 실패(조회): '+e); return []; }
     }
   </script>
 </head>
