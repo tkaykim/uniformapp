@@ -1289,11 +1289,11 @@
           ths.forEach(th => th.style.display = '');
           tds.forEach(tr => Array.from(tr.children).forEach(td => td.style.display = ''));
           if (role === '중간관리자') {
-            ths.forEach((th, i) => { if (i === 9) th.style.display = 'none'; });
-            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i === 9) td.style.display = 'none'; }); });
+            ths.forEach((th, i) => { if (i === 10) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i === 10) td.style.display = 'none'; }); });
           } else if (role === '디자인관리자') {
-            ths.forEach((th, i) => { if (i !== 0 && i !== 1) th.style.display = 'none'; });
-            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (i !== 0 && i !== 1) td.style.display = 'none'; }); });
+            ths.forEach((th, i) => { if (![0,1,4,7].includes(i)) th.style.display = 'none'; });
+            tds.forEach(tr => { Array.from(tr.children).forEach((td, i) => { if (![0,1,4,7].includes(i)) td.style.display = 'none'; }); });
           }
         }
         // 발주 목록
