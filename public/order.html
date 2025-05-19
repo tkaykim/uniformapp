@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>유니폼 운영 시스템 - CRUD</title>
+  <title>모두의 유니폼 전체관리</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     .cost-btn-group {
@@ -1549,8 +1549,15 @@
 <body>
   <!-- 주문관리 -->
   <div id="orderTab" class="tab" style="display:block;">
-    <h2>주문 등록</h2>
-    <input id="managerFilter" placeholder="담당자명 입력" oninput="loadOrders()" style="margin-bottom:5px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>주문 등록</h2>
+      <div style="display:flex; align-items:center; gap:4px; float:right;">
+        <input id="managerFilter" placeholder="담당자명 검색" oninput="loadOrders()" style="height:24px;">
+        <button onclick="loadOrders()" style="height:28px; width:28px; padding:0; background:#fff; border:1px solid #bbb; border-radius:50%; cursor:pointer;">
+          <span style="font-size:16px;">🔍</span>
+        </button>
+      </div>
+    </div>
     <input id="orderDate" type="date" value="2024-05-20">
     <input id="groupName" placeholder="단체명">
     <input id="representativeName" placeholder="대표자명">
