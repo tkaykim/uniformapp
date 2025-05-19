@@ -97,11 +97,11 @@
         });
       }
       // 담당자 필터 적용
-      const filter = document.getElementById('managerFilter')?.value?.trim();
-      let filteredData = data;
-      if (filter) {
-        filteredData = data.filter(o => (o.managerName || '').includes(filter));
-      }
+      //const filter = document.getElementById('managerFilter')?.value?.trim();
+      //let filteredData = data;
+      //if (filter) {
+     //   filteredData = data.filter(o => (o.managerName || '').includes(filter));
+     // }
       // 주문 row HTML을 먼저 누적
       let html = '';
       filteredData.forEach(o => {
@@ -180,19 +180,19 @@
         updateCostSum(o.orderId);
       });
       // 담당자별 집계 테이블 렌더링
-      renderManagerSummary(filteredData, costData);
+      //renderManagerSummary(filteredData, costData);
     }
 
     // 담당자별 집계 테이블 함수 추가
-    function renderManagerSummary(data, costData) {
+   // function renderManagerSummary(data, costData) {
       // 담당자별 집계
-      const summary = {};
-      data.forEach(o => {
-        const m = o.managerName || '미지정';
-        if (!summary[m]) summary[m] = { totalPrice: 0, totalCost: 0, profit: 0, orders: [] };
-        summary[m].totalPrice += o.totalPrice || 0;
-        summary[m].orders.push(o);
-      });
+    //  const summary = {};
+    //  data.forEach(o => {
+     //   const m = o.managerName || '미지정';
+      //  if (!summary[m]) summary[m] = { totalPrice: 0, totalCost: 0, profit: 0, orders: [] };
+      //  summary[m].totalPrice += o.totalPrice || 0;
+      //  summary[m].orders.push(o);
+    /*  });
       // 지출 합산
       Object.keys(summary).forEach(m => {
         summary[m].orders.forEach(o => {
@@ -234,7 +234,7 @@
       // 주문 목록 아래에 표시
       const summaryDiv = document.getElementById('managerSummary');
       if (summaryDiv) summaryDiv.innerHTML = html;
-    }
+    }*/
 
     async function deleteOrder(orderId) {
       if (!confirm('정말 이 주문을 삭제하시겠습니까?\n연관된 발주, 디자인, 인쇄, 배송 데이터는 유지됩니다.')) return;
